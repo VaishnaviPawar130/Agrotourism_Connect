@@ -14,7 +14,10 @@ export enum UserStatus {
 }
 
 export interface User {
-  id: string;
+  /** Mongo document id. The API serializes this as `_id`, matching every other
+   *  entity — this interface previously declared `id`, so `user.id` was always
+   *  undefined and the admin Users page sent status updates to `/users/undefined`. */
+  _id: string;
   fullName: string;
   email: string;
   mobile: string;

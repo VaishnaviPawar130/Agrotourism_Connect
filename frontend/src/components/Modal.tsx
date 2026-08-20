@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
 export function Modal({
@@ -14,19 +14,67 @@ export function Modal({
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg';
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  // Close on Escape, and lock background scroll while the dialog is open.
+  useEffect(() => {
+    if (!open) return;
+
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', onKeyDown);
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    // Move focus into the dialog so keyboard and screen-reader users land here.
+    panelRef.current?.focus();
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      // Return focus to whatever opened the dialog.
+      previouslyFocused.current?.focus?.();
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
   const widthClass = size === 'sm' ? 'max-w-md' : size === 'lg' ? 'max-w-3xl' : 'max-w-xl';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
-      <div className={`w-full ${widthClass} max-h-[85vh] overflow-y-auto rounded-lg bg-white shadow-xl`}>
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
-          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-          <button onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-brand-deep/50 p-4 sm:items-center"
+      // Clicking the backdrop (but not the panel) dismisses the dialog.
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        tabIndex={-1}
+        className={`my-auto flex w-full ${widthClass} max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl bg-white shadow-xl focus:outline-none`}
+      >
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-brand-border px-5 py-3">
+          <h2 className="text-base font-semibold text-brand-charcoal">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="rounded p-1 text-brand-slate transition-colors hover:bg-brand-cream hover:text-brand-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-forest"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        {/* Only the body scrolls, so the header and any action buttons inside
+            the content stay reachable on short viewports. */}
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
       </div>
     </div>
   );

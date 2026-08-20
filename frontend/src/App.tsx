@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { PublicLayout } from './layouts/PublicLayout';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { ProtectedRoute } from './routes/ProtectedRoute';
+import { LoadingState } from './components/LoadingState';
+import { useSessionCheck } from './hooks/useSessionCheck';
 import { UserRole } from './types';
 
 import { HomePage } from './pages/public/HomePage';
@@ -39,6 +41,19 @@ import { InvestorProfilePage } from './pages/investor/InvestorProfilePage';
 const STAFF_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PROJECT_MANAGER];
 
 export default function App() {
+  // Hold rendering until a persisted token has been validated, so a protected
+  // route is never rendered for an expired session (and a logged-in user is
+  // never bounced to /login on refresh before the check completes).
+  const sessionReady = useSessionCheck();
+
+  if (!sessionReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-brand-cream">
+        <LoadingState />
+      </div>
+    );
+  }
+
   return (
     <Routes>
       <Route element={<PublicLayout />}>

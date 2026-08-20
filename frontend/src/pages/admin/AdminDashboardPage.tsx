@@ -4,7 +4,9 @@ import { PageHeader } from '../../components/PageHeader';
 import { StatCard } from '../../components/StatCard';
 import { LoadingState } from '../../components/LoadingState';
 import { StatusBadge } from '../../components/StatusBadge';
+import { ErrorState } from '../../components/ErrorState';
 import { getDashboardSummary } from '../../services/dashboardService';
+import { getErrorMessage } from '../../services/api';
 
 interface DashboardSummary {
   counts: {
@@ -27,14 +29,19 @@ interface DashboardSummary {
 export function AdminDashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     getDashboardSummary()
       .then(setSummary)
+      .catch((err) => setError(getErrorMessage(err)))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading || !summary) return <LoadingState />;
+  // Distinguish the three states — previously any failure left a permanent spinner.
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} />;
+  if (!summary) return <ErrorState message="Dashboard data is unavailable." />;
 
   const { counts, recent } = summary;
 

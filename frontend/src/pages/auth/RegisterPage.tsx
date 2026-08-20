@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Leaf } from 'lucide-react';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
@@ -25,6 +25,7 @@ export function RegisterPage() {
   const [error, setError] = useState('');
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
+  const currentUser = useAuthStore((s) => s.user);
 
   async function onSubmit(data: RegisterPayload) {
     setError('');
@@ -36,6 +37,9 @@ export function RegisterPage() {
       setError(getErrorMessage(err));
     }
   }
+
+  // An already-authenticated visitor has no business on this form.
+  if (currentUser) return <Navigate to="/dashboard" replace />;
 
   return (
     <div className="flex min-h-screen bg-brand-cream">

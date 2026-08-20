@@ -32,6 +32,7 @@ export function InvestorProfilePage() {
       .then((profile) => {
         if (profile) reset(profile);
       })
+      .catch((err) => setError(getErrorMessage(err)))
       .finally(() => setLoading(false));
   }, [reset]);
 

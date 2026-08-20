@@ -8,16 +8,22 @@ import { listPublicProjects } from '../../services/projectService';
 import { createInvestmentInterest } from '../../services/investorService';
 import { Project } from '../../types';
 import { getErrorMessage } from '../../services/api';
+import { ErrorState } from '../../components/ErrorState';
 
 export function OpportunitiesPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
     listPublicProjects({ limit: 50 })
       .then((res) => setProjects(res.items))
+      .catch((err) => {
+        setProjects([]);
+        setLoadError(getErrorMessage(err));
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -40,6 +46,8 @@ export function OpportunitiesPage() {
       {message && <div className="mb-4 rounded-md bg-forest-50 px-4 py-3 text-sm text-forest-800">{message}</div>}
       {loading ? (
         <LoadingState />
+      ) : loadError ? (
+        <ErrorState message={loadError} />
       ) : projects.length === 0 ? (
         <EmptyState title="No opportunities available right now" />
       ) : (

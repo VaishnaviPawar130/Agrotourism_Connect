@@ -10,6 +10,7 @@ import { Textarea } from '../../components/Textarea';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import { listLeads, updateLead, createFollowUp, listFollowUpsForLead } from '../../services/leadService';
+import { getErrorMessage } from '../../services/api';
 import { Lead, LeadStatus } from '../../types';
 
 const statusOptions = Object.values(LeadStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
@@ -25,6 +26,7 @@ interface FollowUpRow {
 export function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -33,13 +35,19 @@ export function LeadsPage() {
   const [note, setNote] = useState('');
   const [commType, setCommType] = useState('Call');
   const [saving, setSaving] = useState(false);
+  const [followUpError, setFollowUpError] = useState('');
 
   function load() {
     setLoading(true);
+    setError('');
     listLeads({ search, page, limit: 20 })
       .then((res) => {
         setLeads(res.items);
         setTotalPages(res.totalPages);
+      })
+      .catch((err) => {
+        setLeads([]);
+        setError(getErrorMessage(err));
       })
       .finally(() => setLoading(false));
   }
@@ -53,17 +61,28 @@ export function LeadsPage() {
 
   function openLead(lead: Lead) {
     setActiveLead(lead);
-    listFollowUpsForLead(lead._id).then(setFollowUps);
+    setFollowUps([]);
+    setFollowUpError('');
+    listFollowUpsForLead(lead._id)
+      .then(setFollowUps)
+      .catch((err) => setFollowUpError(getErrorMessage(err)));
   }
 
   async function handleAddFollowUp() {
     if (!activeLead) return;
+    if (!commType.trim()) {
+      setFollowUpError('Communication type is required');
+      return;
+    }
     setSaving(true);
+    setFollowUpError('');
     try {
-      await createFollowUp({ lead: activeLead._id, communicationType: commType, notes: note });
+      await createFollowUp({ lead: activeLead._id, communicationType: commType.trim(), notes: note.trim() });
       setNote('');
       const updated = await listFollowUpsForLead(activeLead._id);
       setFollowUps(updated);
+    } catch (err) {
+      setFollowUpError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -89,7 +108,7 @@ export function LeadsPage() {
     <div>
       <PageHeader title="Leads" description="Manage CRM leads and follow-up history." />
       <FilterBar search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} searchPlaceholder="Search leads..." />
-      <DataTable columns={columns} rows={leads} loading={loading} keyExtractor={(l) => l._id} />
+      <DataTable columns={columns} rows={leads} loading={loading} error={error} keyExtractor={(l) => l._id} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       <Modal open={!!activeLead} onClose={() => setActiveLead(null)} title={activeLead?.name} size="lg">
@@ -107,6 +126,9 @@ export function LeadsPage() {
               </div>
             ))}
           </div>
+          {followUpError && (
+            <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{followUpError}</div>
+          )}
           <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
             <Input label="Communication Type" value={commType} onChange={(e) => setCommType(e.target.value)} />
             <Textarea label="Notes" value={note} onChange={(e) => setNote(e.target.value)} />

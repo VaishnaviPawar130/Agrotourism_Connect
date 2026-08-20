@@ -6,18 +6,25 @@ import { DataTable, Column } from '../../components/DataTable';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Modal } from '../../components/Modal';
 import { listLands } from '../../services/landService';
+import { getErrorMessage } from '../../services/api';
 import { Land } from '../../types';
 import { LandForm } from './LandForm';
 
 export function MyLandsPage() {
   const [lands, setLands] = useState<Land[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
 
   function load() {
     setLoading(true);
+    setError('');
     listLands({ limit: 50 })
       .then((res) => setLands(res.items))
+      .catch((err) => {
+        setLands([]);
+        setError(getErrorMessage(err));
+      })
       .finally(() => setLoading(false));
   }
 
@@ -42,7 +49,7 @@ export function MyLandsPage() {
           </Button>
         }
       />
-      <DataTable columns={columns} rows={lands} loading={loading} keyExtractor={(l) => l._id} emptyLabel="You haven't submitted any land yet" />
+      <DataTable columns={columns} rows={lands} loading={loading} error={error} keyExtractor={(l) => l._id} emptyLabel="You haven't submitted any land yet" />
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Submit Land" size="lg">
         <LandForm

@@ -27,8 +27,14 @@ export async function register(payload: RegisterPayload) {
 }
 
 export async function forgotPassword(email: string) {
-  const res = await api.post('/auth/forgot-password', { email });
-  return res.data.data as { resetToken?: string };
+  // Deliberately returns nothing: the reset token is never sent to the browser.
+  await api.post('/auth/forgot-password', { email });
+}
+
+/** Fetches the authenticated user, used to validate a persisted session on boot. */
+export async function getCurrentUser() {
+  const res = await api.get('/users/me');
+  return res.data.data as User;
 }
 
 export async function resetPassword(token: string, newPassword: string) {

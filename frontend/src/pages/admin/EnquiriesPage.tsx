@@ -3,6 +3,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { FilterBar } from '../../components/FilterBar';
 import { DataTable, Column } from '../../components/DataTable';
 import { listEnquiries } from '../../services/enquiryService';
+import { getErrorMessage } from '../../services/api';
 
 interface EnquiryRow {
   _id: string;
@@ -16,12 +17,18 @@ interface EnquiryRow {
 export function EnquiriesPage() {
   const [enquiries, setEnquiries] = useState<EnquiryRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     setLoading(true);
+    setError('');
     listEnquiries({ search, limit: 50 })
       .then((res) => setEnquiries(res.items))
+      .catch((err) => {
+        setEnquiries([]);
+        setError(getErrorMessage(err));
+      })
       .finally(() => setLoading(false));
   }, [search]);
 
@@ -37,7 +44,7 @@ export function EnquiriesPage() {
     <div>
       <PageHeader title="Website Enquiries" description="Enquiries submitted via the public contact form." />
       <FilterBar search={search} onSearchChange={setSearch} searchPlaceholder="Search enquiries..." />
-      <DataTable columns={columns} rows={enquiries} loading={loading} keyExtractor={(e) => e._id} />
+      <DataTable columns={columns} rows={enquiries} loading={loading} error={error} keyExtractor={(e) => e._id} />
     </div>
   );
 }

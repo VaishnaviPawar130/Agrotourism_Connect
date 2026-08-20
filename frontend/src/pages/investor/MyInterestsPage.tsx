@@ -3,6 +3,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { DataTable, Column } from '../../components/DataTable';
 import { StatusBadge } from '../../components/StatusBadge';
 import { listMyInvestmentInterests } from '../../services/investorService';
+import { getErrorMessage } from '../../services/api';
 
 interface InterestRow {
   _id: string;
@@ -15,10 +16,15 @@ interface InterestRow {
 export function MyInterestsPage() {
   const [interests, setInterests] = useState<InterestRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     listMyInvestmentInterests({ limit: 50 })
       .then((res) => setInterests(res.items))
+      .catch((err) => {
+        setInterests([]);
+        setError(getErrorMessage(err));
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -32,7 +38,7 @@ export function MyInterestsPage() {
   return (
     <div>
       <PageHeader title="My Interests" description="Track the investment interests you've submitted." />
-      <DataTable columns={columns} rows={interests} loading={loading} keyExtractor={(i) => i._id} emptyLabel="You haven't submitted any interest yet" />
+      <DataTable columns={columns} rows={interests} loading={loading} error={error} keyExtractor={(i) => i._id} emptyLabel="You haven't submitted any interest yet" />
     </div>
   );
 }

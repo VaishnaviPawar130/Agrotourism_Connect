@@ -18,6 +18,7 @@ const typeOptions = Object.values(ProjectType).map((v) => ({ label: v.replaceAll
 export function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [listError, setListError] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -28,10 +29,15 @@ export function AdminProjectsPage() {
 
   function load() {
     setLoading(true);
+    setListError('');
     listProjects({ search, page, limit: 20 })
       .then((res) => {
         setProjects(res.items);
         setTotalPages(res.totalPages);
+      })
+      .catch((err) => {
+        setProjects([]);
+        setListError(getErrorMessage(err));
       })
       .finally(() => setLoading(false));
   }
@@ -74,7 +80,7 @@ export function AdminProjectsPage() {
         }
       />
       <FilterBar search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} searchPlaceholder="Search projects..." />
-      <DataTable columns={columns} rows={projects} loading={loading} keyExtractor={(p) => p._id} />
+      <DataTable columns={columns} rows={projects} loading={loading} error={listError} keyExtractor={(p) => p._id} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="New Project">

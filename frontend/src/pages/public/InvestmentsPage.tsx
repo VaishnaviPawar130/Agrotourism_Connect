@@ -4,17 +4,24 @@ import { MapPin } from 'lucide-react';
 import { PageBanner } from '../../components/PageBanner';
 import { LoadingState } from '../../components/LoadingState';
 import { EmptyState } from '../../components/EmptyState';
+import { ErrorState } from '../../components/ErrorState';
 import { listPublicProjects } from '../../services/projectService';
+import { getErrorMessage } from '../../services/api';
 import { Project } from '../../types';
 import { images, projectFallbackImages } from '../../assets/images';
 
 export function InvestmentsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     listPublicProjects({ limit: 50 })
       .then((res) => setProjects(res.items))
+      .catch((err) => {
+        setProjects([]);
+        setError(getErrorMessage(err));
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -28,6 +35,8 @@ export function InvestmentsPage() {
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         {loading ? (
           <LoadingState />
+        ) : error ? (
+          <ErrorState message={error} />
         ) : projects.length === 0 ? (
           <EmptyState title="No opportunities published yet" />
         ) : (

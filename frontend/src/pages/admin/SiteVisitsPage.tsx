@@ -8,6 +8,7 @@ import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
 import { Input } from '../../components/Input';
 import { listSiteVisits, createSiteVisit, updateSiteVisit } from '../../services/siteVisitService';
+import { getErrorMessage } from '../../services/api';
 import { SiteVisit, SiteVisitStatus, Lead, Project } from '../../types';
 
 const statusOptions = Object.values(SiteVisitStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
@@ -15,6 +16,8 @@ const statusOptions = Object.values(SiteVisitStatus).map((v) => ({ label: v.repl
 export function SiteVisitsPage() {
   const [visits, setVisits] = useState<SiteVisit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [visitDate, setVisitDate] = useState('');
   const [meetingPoint, setMeetingPoint] = useState('');
@@ -22,8 +25,13 @@ export function SiteVisitsPage() {
 
   function load() {
     setLoading(true);
+    setError('');
     listSiteVisits({ limit: 50 })
       .then((res) => setVisits(res.items))
+      .catch((err) => {
+        setVisits([]);
+        setError(getErrorMessage(err));
+      })
       .finally(() => setLoading(false));
   }
 
@@ -35,13 +43,20 @@ export function SiteVisitsPage() {
   }
 
   async function handleCreate() {
+    if (!visitDate) {
+      setFormError('Visit date is required');
+      return;
+    }
     setSaving(true);
+    setFormError('');
     try {
       await createSiteVisit({ visitDate, meetingPoint });
       setModalOpen(false);
       setVisitDate('');
       setMeetingPoint('');
       load();
+    } catch (err) {
+      setFormError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -74,10 +89,11 @@ export function SiteVisitsPage() {
           </Button>
         }
       />
-      <DataTable columns={columns} rows={visits} loading={loading} keyExtractor={(v) => v._id} />
+      <DataTable columns={columns} rows={visits} loading={loading} error={error} keyExtractor={(v) => v._id} />
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Schedule Site Visit">
         <div className="space-y-4">
+          {formError && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
           <Input label="Visit Date" type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} />
           <Input label="Meeting Point" value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} />
           <Button className="w-full" loading={saving} onClick={handleCreate}>

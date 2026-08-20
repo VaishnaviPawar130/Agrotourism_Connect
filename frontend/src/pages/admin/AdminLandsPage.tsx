@@ -6,6 +6,7 @@ import { Pagination } from '../../components/Pagination';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Select } from '../../components/Select';
 import { listLands, updateLandStatus } from '../../services/landService';
+import { getErrorMessage } from '../../services/api';
 import { Land, LandStatus } from '../../types';
 
 const statusOptions = Object.values(LandStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
@@ -13,16 +14,22 @@ const statusOptions = Object.values(LandStatus).map((v) => ({ label: v.replaceAl
 export function AdminLandsPage() {
   const [lands, setLands] = useState<Land[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   function load() {
     setLoading(true);
+    setError('');
     listLands({ search, page, limit: 20 })
       .then((res) => {
         setLands(res.items);
         setTotalPages(res.totalPages);
+      })
+      .catch((err) => {
+        setLands([]);
+        setError(getErrorMessage(err));
       })
       .finally(() => setLoading(false));
   }
@@ -54,7 +61,7 @@ export function AdminLandsPage() {
     <div>
       <PageHeader title="Land Submissions" description="Review and manage submitted land." />
       <FilterBar search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} searchPlaceholder="Search lands..." />
-      <DataTable columns={columns} rows={lands} loading={loading} keyExtractor={(l) => l._id} />
+      <DataTable columns={columns} rows={lands} loading={loading} error={error} keyExtractor={(l) => l._id} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );

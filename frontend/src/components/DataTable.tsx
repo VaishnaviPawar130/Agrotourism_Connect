@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { LoadingState } from './LoadingState';
 import { EmptyState } from './EmptyState';
+import { ErrorState } from './ErrorState';
 
 export interface Column<T> {
   header: string;
@@ -12,16 +13,21 @@ export function DataTable<T>({
   columns,
   rows,
   loading,
+  error,
   emptyLabel = 'No records found',
   keyExtractor,
 }: {
   columns: Column<T>[];
   rows: T[];
   loading?: boolean;
+  /** Message from a failed fetch. Shown instead of the empty state so a
+   *  network/permission failure is never mistaken for "no data". */
+  error?: string;
   emptyLabel?: string;
   keyExtractor: (row: T) => string;
 }) {
   if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} />;
   if (!rows.length) return <EmptyState title={emptyLabel} />;
 
   return (
