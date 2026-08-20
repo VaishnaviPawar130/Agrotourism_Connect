@@ -1,0 +1,30 @@
+import { Router } from 'express';
+import authRoutes from '../modules/auth/auth.route';
+import userRoutes from '../modules/users/user.route';
+import landRoutes from '../modules/lands/land.route';
+import projectRoutes from '../modules/projects/project.route';
+import investorRoutes from '../modules/investors/investor.route';
+import investmentInterestRoutes from '../modules/investmentInterests/investmentInterest.route';
+import leadRoutes from '../modules/leads/lead.route';
+import followUpRoutes from '../modules/followUps/followUp.route';
+import siteVisitRoutes from '../modules/siteVisits/siteVisit.route';
+import documentRoutes from '../modules/documents/document.route';
+import enquiryRoutes from '../modules/enquiries/enquiry.route';
+import dashboardRoutes from '../modules/dashboard/dashboard.route';
+
+const router = Router();
+
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/lands', landRoutes);
+router.use('/projects', projectRoutes);
+router.use('/investors', investorRoutes);
+router.use('/investment-interests', investmentInterestRoutes);
+router.use('/leads', leadRoutes);
+router.use('/follow-ups', followUpRoutes);
+router.use('/site-visits', siteVisitRoutes);
+router.use('/documents', documentRoutes);
+router.use('/enquiries', enquiryRoutes);
+router.use('/dashboard', dashboardRoutes);
+
+export default router;
