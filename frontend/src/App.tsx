@@ -19,10 +19,9 @@ import { GalleryPage } from './pages/public/GalleryPage';
 import { KnowledgeCenterPage } from './pages/public/KnowledgeCenterPage';
 import { ContactPage } from './pages/public/ContactPage';
 
-import { LoginPage } from './pages/auth/LoginPage';
-import { RegisterPage } from './pages/auth/RegisterPage';
-import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
+import { AuthModalRoute } from './pages/auth/AuthModalRoute';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
+import { AuthModal } from './components/AuthModal';
 
 import { DashboardIndex } from './pages/dashboard/DashboardIndex';
 import { DocumentsPage } from './pages/shared/DocumentsPage';
@@ -55,7 +54,9 @@ export default function App() {
   }
 
   return (
-    <Routes>
+    <>
+      <AuthModal />
+      <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
@@ -71,9 +72,9 @@ export default function App() {
         <Route path="/contact" element={<ContactPage />} />
       </Route>
 
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/login" element={<AuthModalRoute mode="login" />} />
+      <Route path="/register" element={<AuthModalRoute mode="register" />} />
+      <Route path="/forgot-password" element={<AuthModalRoute mode="forgot-password" />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route element={<ProtectedRoute />}>
@@ -99,6 +100,7 @@ export default function App() {
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }

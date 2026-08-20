@@ -33,7 +33,7 @@ export function DataTable<T>({
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
       <table className="min-w-full divide-y divide-slate-200 text-sm">
-        <thead className="bg-sand-50">
+        <thead className="bg-brand-cream">
           <tr>
             {columns.map((col) => (
               <th key={col.header} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -44,7 +44,7 @@ export function DataTable<T>({
         </thead>
         <tbody className="divide-y divide-slate-100">
           {rows.map((row) => (
-            <tr key={keyExtractor(row)} className="hover:bg-sand-50/60">
+            <tr key={keyExtractor(row)} className="hover:bg-brand-cream/60">
               {columns.map((col) => (
                 <td key={col.header} className={`px-4 py-2.5 text-slate-700 ${col.className ?? ''}`}>
                   {col.accessor(row)}

@@ -43,7 +43,7 @@ export function OpportunitiesPage() {
   return (
     <div>
       <PageHeader title="Investment Opportunities" description="Browse published projects and express your interest." />
-      {message && <div className="mb-4 rounded-md bg-forest-50 px-4 py-3 text-sm text-forest-800">{message}</div>}
+      {message && <div className="mb-4 rounded-md bg-brand-forest/10 px-4 py-3 text-sm text-brand-forest">{message}</div>}
       {loading ? (
         <LoadingState />
       ) : loadError ? (
@@ -54,10 +54,10 @@ export function OpportunitiesPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => (
             <div key={p._id} className="rounded-lg border border-slate-200 bg-white p-5">
-              <Landmark className="h-5 w-5 text-forest-700" />
+              <Landmark className="h-5 w-5 text-brand-forest" />
               <h3 className="mt-2 font-semibold text-slate-900">{p.projectName}</h3>
               <p className="mt-1 text-sm text-slate-500">{p.location}</p>
-              <span className="mt-2 inline-block rounded-full bg-forest-50 px-2.5 py-0.5 text-xs font-medium text-forest-700">
+              <span className="mt-2 inline-block rounded-full bg-brand-forest/10 px-2.5 py-0.5 text-xs font-medium text-brand-forest">
                 {p.projectType.replaceAll('_', ' ')}
               </span>
               <Button

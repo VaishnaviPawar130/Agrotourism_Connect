@@ -24,7 +24,7 @@ export function FileUpload({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="flex w-full flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-slate-300 bg-sand-50 px-4 py-6 text-sm text-slate-500 hover:border-forest-400 hover:text-forest-700"
+        className="flex w-full flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-slate-300 bg-brand-cream px-4 py-6 text-sm text-slate-500 hover:border-brand-sage hover:text-brand-forest"
       >
         <UploadCloud className="h-5 w-5" />
         {label}

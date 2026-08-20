@@ -20,6 +20,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useAuthModalStore } from '../store/authModalStore';
 import { images } from '../assets/images';
 
 const topLinks = [
@@ -113,6 +114,7 @@ export function PublicLayout() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileGroupOpen, setMobileGroupOpen] = useState<string | null>(null);
   const user = useAuthStore((s) => s.user);
+  const openAuthModal = useAuthModalStore((s) => s.openModal);
 
   useEffect(() => {
     function onScroll() {
@@ -175,15 +177,20 @@ export function PublicLayout() {
               </Link>
             ) : (
               <>
-                <Link to="/login" className="rounded-md px-2 py-1 text-[14.5px] font-medium text-brand-charcoal transition-colors hover:text-brand-forest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-forest focus-visible:ring-offset-1">
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('login')}
+                  className="rounded-md px-2 py-1 text-[14.5px] font-medium text-brand-charcoal transition-colors hover:text-brand-forest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-forest focus-visible:ring-offset-1"
+                >
                   Login
-                </Link>
-                <Link
-                  to="/register"
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('register')}
                   className="rounded-lg bg-[#C79A50] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#B08640] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C79A50] focus-visible:ring-offset-2"
                 >
                   Register
-                </Link>
+                </button>
               </>
             )}
           </div>
@@ -260,12 +267,20 @@ export function PublicLayout() {
                   </Link>
                 ) : (
                   <>
-                    <Link to="/login" className="w-1/2 rounded-lg border border-brand-border px-4 py-2.5 text-center text-sm font-medium text-brand-charcoal">
+                    <button
+                      type="button"
+                      onClick={() => { setOpen(false); openAuthModal('login'); }}
+                      className="w-1/2 rounded-lg border border-brand-border px-4 py-2.5 text-center text-sm font-medium text-brand-charcoal"
+                    >
                       Login
-                    </Link>
-                    <Link to="/register" className="w-1/2 rounded-lg bg-[#C79A50] px-4 py-2.5 text-center text-sm font-semibold text-white">
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setOpen(false); openAuthModal('register'); }}
+                      className="w-1/2 rounded-lg bg-[#C79A50] px-4 py-2.5 text-center text-sm font-semibold text-white"
+                    >
                       Register
-                    </Link>
+                    </button>
                   </>
                 )}
               </div>
@@ -322,9 +337,9 @@ export function PublicLayout() {
           <div>
             <h4 className="mb-3 text-sm font-semibold text-white">Get Started</h4>
             <ul className="space-y-2.5 text-sm text-brand-sage">
-              <li><Link to="/register" className="transition-colors hover:text-white">List Your Land</Link></li>
-              <li><Link to="/register" className="transition-colors hover:text-white">Become an Investor</Link></li>
-              <li><Link to="/login" className="transition-colors hover:text-white">Login</Link></li>
+              <li><button type="button" onClick={() => openAuthModal('register')} className="text-left transition-colors hover:text-white">List Your Land</button></li>
+              <li><button type="button" onClick={() => openAuthModal('register')} className="text-left transition-colors hover:text-white">Become an Investor</button></li>
+              <li><button type="button" onClick={() => openAuthModal('login')} className="text-left transition-colors hover:text-white">Login</button></li>
             </ul>
             <ul className="mt-5 space-y-2 text-sm text-brand-sage">
               <li className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5 shrink-0" /> India</li>

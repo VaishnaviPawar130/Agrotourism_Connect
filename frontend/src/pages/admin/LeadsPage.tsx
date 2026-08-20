@@ -89,7 +89,7 @@ export function LeadsPage() {
   }
 
   const columns: Column<Lead>[] = [
-    { header: 'Name', accessor: (l) => <button onClick={() => openLead(l)} className="text-forest-700 hover:underline">{l.name}</button> },
+    { header: 'Name', accessor: (l) => <button onClick={() => openLead(l)} className="text-brand-forest hover:underline">{l.name}</button> },
     { header: 'Mobile', accessor: (l) => l.mobile },
     { header: 'Type', accessor: (l) => l.leadType.replaceAll('_', ' ') },
     { header: 'Source', accessor: (l) => l.source.replaceAll('_', ' ') },
@@ -117,7 +117,7 @@ export function LeadsPage() {
           <div className="mt-2 max-h-48 space-y-2 overflow-y-auto">
             {followUps.length === 0 && <p className="text-sm text-slate-400">No follow-ups recorded yet.</p>}
             {followUps.map((f) => (
-              <div key={f._id} className="rounded-md bg-sand-50 p-2 text-sm">
+              <div key={f._id} className="rounded-md bg-brand-cream p-2 text-sm">
                 <div className="flex justify-between text-xs text-slate-500">
                   <span>{f.communicationType}</span>
                   <span>{new Date(f.date).toLocaleString()}</span>

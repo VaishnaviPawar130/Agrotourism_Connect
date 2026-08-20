@@ -7,5 +7,26 @@ html {
 }
 
 body {
-  @apply bg-sand-50 text-slate-950 antialiased;
+  @apply bg-brand-offwhite text-slate-950 antialiased;
+}
+
+@keyframes auth-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-auth-modal-in {
+  animation: auth-modal-in 0.18s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-auth-modal-in {
+    animation: none;
+  }
 }

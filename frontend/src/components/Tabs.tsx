@@ -15,7 +15,7 @@ export function Tabs({
           onClick={() => onChange(tab.value)}
           className={`px-3 py-2 text-sm font-medium transition-colors ${
             active === tab.value
-              ? 'border-b-2 border-forest-700 text-forest-800'
+              ? 'border-b-2 border-brand-forest text-brand-forest'
               : 'text-slate-500 hover:text-slate-800'
           }`}
         >
