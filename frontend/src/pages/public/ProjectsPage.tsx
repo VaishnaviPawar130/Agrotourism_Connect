@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2 } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { PageBanner } from '../../components/PageBanner';
 import { LoadingState } from '../../components/LoadingState';
 import { EmptyState } from '../../components/EmptyState';
 import { listPublicProjects } from '../../services/projectService';
 import { Project } from '../../types';
+import { images, projectFallbackImages } from '../../assets/images';
 
 export function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -19,24 +20,42 @@ export function ProjectsPage() {
 
   return (
     <div>
-      <PageBanner title="Projects" description="Explore our published agro tourism and resort development projects." />
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+      <PageBanner title="Projects" description="Explore our published agro tourism and resort development projects." image={images.aerialResort} />
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         {loading ? (
           <LoadingState />
         ) : projects.length === 0 ? (
           <EmptyState title="No projects published yet" description="Check back soon for new agro tourism opportunities." />
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((p) => (
-              <Link key={p._id} to={`/projects/${p.slug}`} className="rounded-lg border border-slate-200 bg-white p-5 hover:shadow-md">
-                <Building2 className="h-6 w-6 text-forest-700" />
-                <h3 className="mt-3 font-semibold text-slate-900">{p.projectName}</h3>
-                <p className="mt-1 text-sm text-slate-500">{p.location}</p>
-                <span className="mt-3 inline-block rounded-full bg-forest-50 px-2.5 py-0.5 text-xs font-medium text-forest-700">
-                  {p.projectType.replaceAll('_', ' ')}
-                </span>
-              </Link>
-            ))}
+          <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.map((p, i) => {
+              const cardImage = p.images?.[0] || projectFallbackImages[i % projectFallbackImages.length];
+              return (
+                <Link
+                  key={p._id}
+                  to={`/projects/${p.slug}`}
+                  className="group overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm transition-all duration-200 hover:-translate-y-[3px] hover:shadow-md"
+                >
+                  <div className="relative h-44 overflow-hidden">
+                    <img
+                      src={cardImage}
+                      alt={p.projectName}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-brand-forest shadow-sm">
+                      {p.projectType.replaceAll('_', ' ')}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-semibold text-brand-charcoal">{p.projectName}</h3>
+                    <p className="mt-1 flex items-center gap-1 text-sm text-brand-slate">
+                      <MapPin className="h-3.5 w-3.5" /> {p.location}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

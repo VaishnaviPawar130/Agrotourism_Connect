@@ -10,15 +10,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, error, c
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-slate-800">
+        <label htmlFor={inputId} className="text-sm font-medium text-brand-charcoal">
           {label}
         </label>
       )}
       <input
         ref={ref}
         id={inputId}
-        className={`rounded-md border px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-forest-500 ${
-          error ? 'border-red-400' : 'border-slate-300'
+        className={`rounded-md border px-3.5 py-3 text-sm text-brand-charcoal placeholder:text-brand-slate/70 focus:outline-none focus:border-[#1F4D3A] focus:ring-4 focus:ring-[#1F4D3A]/15 ${
+          error ? 'border-red-400' : 'border-brand-border'
         } ${className}`}
         {...props}
       />

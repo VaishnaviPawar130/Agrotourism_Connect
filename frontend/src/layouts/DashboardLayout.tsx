@@ -55,10 +55,10 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-sand-50">
-      <aside className="hidden w-60 flex-col border-r border-slate-200 bg-white md:flex">
-        <Link to="/" className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 font-semibold text-forest-800">
-          <span className="rounded-md bg-forest-700 p-1.5 text-white">
+    <div className="flex min-h-screen bg-brand-cream">
+      <aside className="hidden w-60 flex-col border-r border-brand-border bg-white shadow-sm md:flex">
+        <Link to="/" className="flex items-center gap-2 border-b border-brand-border px-5 py-4 font-semibold text-brand-charcoal">
+          <span className="rounded-md bg-brand-forest p-1.5 text-white shadow-sm">
             <Leaf className="h-4 w-4" />
           </span>
           Agrotourism
@@ -71,7 +71,7 @@ export function DashboardLayout() {
               end={item.end}
               className={({ isActive }) =>
                 `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive ? 'bg-forest-700 text-white' : 'text-slate-600 hover:bg-forest-50 hover:text-forest-800'
+                  isActive ? 'bg-brand-forest text-white' : 'text-brand-slate hover:bg-brand-cream hover:text-brand-charcoal'
                 }`
               }
             >
@@ -80,10 +80,10 @@ export function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-slate-100 px-3 py-3">
+        <div className="border-t border-brand-border px-3 py-3">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-700"
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-brand-slate hover:bg-red-50 hover:text-red-700"
           >
             <LogOut className="h-4 w-4" />
             Logout
@@ -92,11 +92,11 @@ export function DashboardLayout() {
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:px-6">
-          <div className="text-sm text-slate-500">
-            Welcome, <span className="font-medium text-slate-800">{user?.fullName}</span>
+        <header className="flex items-center justify-between border-b border-brand-border bg-white px-4 py-3 shadow-sm md:px-6">
+          <div className="text-sm text-brand-slate">
+            Welcome, <span className="font-medium text-brand-charcoal">{user?.fullName}</span>
           </div>
-          <span className="rounded-full bg-forest-50 px-3 py-1 text-xs font-medium text-forest-700">{user?.role.replaceAll('_', ' ')}</span>
+          <span className="rounded-full bg-brand-cream px-3 py-1 text-xs font-medium text-brand-forest">{user?.role.replaceAll('_', ' ')}</span>
         </header>
         <main className="flex-1 p-4 md:p-6">
           <Outlet />

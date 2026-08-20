@@ -1,0 +1,70 @@
+AGROTOURISM CONNECT - TEXT-FREE IMAGE ASSETS
+=======================================================
+
+All images are separate files and contain no embedded headings, captions, prices, phone numbers, logos, or watermarks.
+Use React/HTML for all visible website text.
+
+01_aerial_agrotourism_resort.webp
+  Description: Aerial Agro Tourism Resort
+  Suggested use: Home hero / Projects / Marketplace
+
+02_raw_tourism_land.webp
+  Description: Raw Tourism Land
+  Suggested use: Land development / Landowner module
+
+03_premium_resort_cottages.webp
+  Description: Premium Resort Cottages
+  Suggested use: Resort development / Projects
+
+04_aframe_cottages.webp
+  Description: A-Frame Cottages
+  Suggested use: Accommodation / Resort development
+
+05_pod_prefab_cottages.webp
+  Description: POD / Prefab Cottages
+  Suggested use: Accommodation / Resort development
+
+06_farm_fields.webp
+  Description: Farm Fields
+  Suggested use: Agro Tourism / Crops / Plantation
+
+07_vertical_farming.webp
+  Description: Vertical Farming
+  Suggested use: Modern farming / Training
+
+08_resort_pool_landscape.webp
+  Description: Resort Pool & Landscaping
+  Suggested use: Amenities / Resort development
+
+09_farm_to_table_dining.webp
+  Description: Farm-to-Table Dining
+  Suggested use: Food / Hospitality / Experiences
+
+10_glamping_tent.webp
+  Description: Glamping
+  Suggested use: Accommodation / Experiences
+
+11_cattle_farm.webp
+  Description: Cattle Farm
+  Suggested use: Farm activities / Rural experiences
+
+12_fruit_orchard.webp
+  Description: Fruit Orchard
+  Suggested use: Fruit picking / Plantation / Agro Tourism
+
+13_tourism_masterplan.webp
+  Description: Tourism Masterplan
+  Suggested use: Land development / Concept planning
+
+14_landscaped_gazebo.webp
+  Description: Landscaped Gazebo
+  Suggested use: Amenities / Landscaping
+
+15_bonfire_viewpoint.webp
+  Description: Bonfire Viewpoint
+  Suggested use: Experiences / Resort amenities
+
+16_dam_view_landscape.webp
+  Description: Dam View Landscape
+  Suggested use: Hero / Destination / Projects
+

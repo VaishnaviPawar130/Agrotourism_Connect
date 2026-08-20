@@ -32,9 +32,23 @@ export default {
         slate: {
           950: '#0b1210',
         },
+        brand: {
+          forest: '#1F4D3A',
+          deep: '#14372A',
+          sage: '#8FAF9A',
+          sand: '#D8C9AE',
+          cream: '#F7F3EB',
+          offwhite: '#FCFCFA',
+          charcoal: '#25302B',
+          slate: '#66736D',
+          border: '#E4E8E4',
+          gold: '#C99732',
+          goldSoft: '#D9B66F',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['"Fraunces"', 'Georgia', 'serif'],
       },
     },
   },
