@@ -1,0 +1,13 @@
+export enum InvestmentInterestAction {
+  SUBMIT_INTEREST = 'SUBMIT_INTEREST',
+  REQUEST_CALLBACK = 'REQUEST_CALLBACK',
+  REQUEST_MEETING = 'REQUEST_MEETING',
+  REQUEST_SITE_VISIT = 'REQUEST_SITE_VISIT',
+}
+
+export enum InvestmentInterestStatus {
+  NEW = 'NEW',
+  IN_PROGRESS = 'IN_PROGRESS',
+  RESOLVED = 'RESOLVED',
+  CLOSED = 'CLOSED',
+}
