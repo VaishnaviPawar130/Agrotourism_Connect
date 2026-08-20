@@ -1,0 +1,8 @@
+export enum InvestmentRange {
+  BELOW_25L = 'BELOW_25L',
+  RANGE_25_50L = 'RANGE_25_50L',
+  RANGE_50L_1CR = 'RANGE_50L_1CR',
+  RANGE_1_5CR = 'RANGE_1_5CR',
+  RANGE_5_10CR = 'RANGE_5_10CR',
+  ABOVE_10CR = 'ABOVE_10CR',
+}
