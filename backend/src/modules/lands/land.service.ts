@@ -3,9 +3,25 @@ import { Land, ILand } from './land.model';
 import { CreateLandInput, UpdateLandInput } from './land.validation';
 import { LandStatus } from './land.types';
 import { ApiError } from '../../utils/ApiError';
+import { escapeRegex } from '../../utils/escapeRegex';
+
+/** Window in which an identical resubmission is treated as a duplicate click / retry. */
+const DUPLICATE_WINDOW_MS = 2 * 60 * 1000;
 
 export async function createLand(ownerId: string, input: CreateLandInput) {
-  return Land.create({ ...input, owner: ownerId, status: LandStatus.SUBMITTED });
+  // Guard against double-clicks and network retries creating two identical land
+  // records (and, downstream, two CRM leads). Same owner + same title + same
+  // survey number within a short window is treated as the same submission.
+  const recent = await Land.findOne({
+    owner: ownerId,
+    landTitle: input.landTitle,
+    surveyNumber: input.surveyNumber ?? { $in: [null, undefined, ''] },
+    createdAt: { $gte: new Date(Date.now() - DUPLICATE_WINDOW_MS) },
+  });
+  if (recent) return { land: recent, isDuplicate: true as const };
+
+  const land = await Land.create({ ...input, owner: ownerId, status: LandStatus.SUBMITTED });
+  return { land, isDuplicate: false as const };
 }
 
 export async function listLands(params: {
@@ -21,11 +37,12 @@ export async function listLands(params: {
   if (params.status) filter.status = params.status;
   if (params.owner) filter.owner = params.owner;
   if (params.search) {
+    const term = escapeRegex(params.search);
     filter.$or = [
-      { landTitle: { $regex: params.search, $options: 'i' } },
-      { ownerName: { $regex: params.search, $options: 'i' } },
-      { district: { $regex: params.search, $options: 'i' } },
-      { state: { $regex: params.search, $options: 'i' } },
+      { landTitle: { $regex: term, $options: 'i' } },
+      { ownerName: { $regex: term, $options: 'i' } },
+      { district: { $regex: term, $options: 'i' } },
+      { state: { $regex: term, $options: 'i' } },
     ];
   }
   const [items, total] = await Promise.all([
@@ -39,9 +56,22 @@ export async function listLands(params: {
   return { items, total, page, limit, totalPages: Math.ceil(total / limit) || 1 };
 }
 
-export async function getLandById(id: string) {
+/**
+ * Fetches a land submission, enforcing ownership for non-staff requesters.
+ *
+ * Land records carry the owner's contact details, survey numbers and asking
+ * price, so a plain findById would let any logged-in user enumerate every
+ * submission on the platform.
+ */
+export async function getLandById(id: string, requester?: { id: string; isPrivileged: boolean }) {
   const land = await Land.findById(id).populate('owner', 'fullName email mobile');
   if (!land) throw ApiError.notFound('Land submission not found');
+
+  if (requester && !requester.isPrivileged) {
+    const ownerId = land.populated('owner') ? String(land.get('owner')._id) : String(land.owner);
+    if (ownerId !== requester.id) throw ApiError.notFound('Land submission not found');
+  }
+
   return land;
 }
 
@@ -65,9 +95,17 @@ export async function updateLandStatus(id: string, status: LandStatus, reviewNot
   return land;
 }
 
-export async function addLandFiles(id: string, field: 'photos' | 'videos' | 'documents', filePaths: string[]) {
+export async function addLandFiles(
+  id: string,
+  field: 'photos' | 'videos' | 'documents',
+  filePaths: string[],
+  requester: { id: string; isPrivileged: boolean }
+) {
   const land = await Land.findById(id);
   if (!land) throw ApiError.notFound('Land submission not found');
+  if (!requester.isPrivileged && String(land.owner) !== requester.id) {
+    throw ApiError.forbidden('You can only upload files to your own land submissions');
+  }
   land[field].push(...filePaths);
   await land.save();
   return land;

@@ -37,5 +37,7 @@ const leadSchema = new Schema<ILead>(
 );
 
 leadSchema.index({ name: 'text', mobile: 'text', email: 'text' });
+// Supports the dedup lookup in createLeadFromSource (mobile + leadType).
+leadSchema.index({ mobile: 1, leadType: 1 });
 
 export const Lead = model<ILead>('Lead', leadSchema);

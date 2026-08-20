@@ -7,10 +7,23 @@ import { logAudit } from '../auditLogs/auditLog.service';
 import * as leadService from '../leads/lead.service';
 import { LeadSource, LeadType } from '../leads/lead.types';
 import { findUserById } from '../users/user.service';
+import { Project } from '../projects/project.model';
+import { ApiError } from '../../utils/ApiError';
 
 export const createInterestHandler = asyncHandler(async (req: Request, res: Response) => {
   const input = createInvestmentInterestSchema.parse(req.body);
-  const interest = await interestService.createInterest(req.user!.id, input);
+
+  // Only projects published to the public listing can receive interest —
+  // otherwise a guessed id would confirm the existence of an unpublished project.
+  const project = await Project.findOne({ _id: input.project, isPublic: true }).select('_id');
+  if (!project) throw ApiError.notFound('Project not found');
+
+  const { interest, isDuplicate } = await interestService.createInterest(req.user!.id, input);
+
+  // Repeat submissions return the existing record without creating a second lead.
+  if (isDuplicate) {
+    return sendSuccess(res, interest, 'Interest submitted', 201);
+  }
 
   const investorUser = await findUserById(req.user!.id);
   if (investorUser) {

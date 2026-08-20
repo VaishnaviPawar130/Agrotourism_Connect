@@ -2,6 +2,7 @@ import { FilterQuery } from 'mongoose';
 import { InvestorProfile, IInvestorProfile } from './investor.model';
 import { UpsertInvestorProfileInput } from './investor.validation';
 import { ApiError } from '../../utils/ApiError';
+import { escapeRegex } from '../../utils/escapeRegex';
 
 export async function upsertOwnProfile(userId: string, input: UpsertInvestorProfileInput) {
   const profile = await InvestorProfile.findOneAndUpdate(
@@ -21,10 +22,11 @@ export async function listInvestors(params: { page?: number; limit?: number; sea
   const limit = params.limit ?? 20;
   const filter: FilterQuery<IInvestorProfile> = {};
   if (params.search) {
+    const term = escapeRegex(params.search);
     filter.$or = [
-      { investorName: { $regex: params.search, $options: 'i' } },
-      { mobile: { $regex: params.search, $options: 'i' } },
-      { email: { $regex: params.search, $options: 'i' } },
+      { investorName: { $regex: term, $options: 'i' } },
+      { mobile: { $regex: term, $options: 'i' } },
+      { email: { $regex: term, $options: 'i' } },
     ];
   }
   const [items, total] = await Promise.all([

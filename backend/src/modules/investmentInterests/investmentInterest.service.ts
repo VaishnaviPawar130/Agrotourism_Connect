@@ -5,7 +5,19 @@ import { InvestmentInterestStatus } from './investmentInterest.types';
 import { ApiError } from '../../utils/ApiError';
 
 export async function createInterest(investorId: string, input: CreateInvestmentInterestInput) {
-  return InvestmentInterest.create({ ...input, investor: investorId });
+  // An investor expressing the same interest in the same project again (double
+  // click, retry, or re-visiting the page) should not create a second record and
+  // a second CRM lead. Reuse any still-open interest of the same kind.
+  const existing = await InvestmentInterest.findOne({
+    investor: investorId,
+    project: input.project,
+    action: input.action,
+    status: { $nin: [InvestmentInterestStatus.CLOSED, InvestmentInterestStatus.RESOLVED] },
+  });
+  if (existing) return { interest: existing, isDuplicate: true as const };
+
+  const interest = await InvestmentInterest.create({ ...input, investor: investorId });
+  return { interest, isDuplicate: false as const };
 }
 
 export async function listInterests(params: {

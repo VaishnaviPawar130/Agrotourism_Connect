@@ -3,6 +3,7 @@ import { Lead, ILead } from './lead.model';
 import { CreateLeadInput, UpdateLeadInput } from './lead.validation';
 import { LeadSource, LeadType } from './lead.types';
 import { ApiError } from '../../utils/ApiError';
+import { escapeRegex } from '../../utils/escapeRegex';
 
 export async function createLead(input: CreateLeadInput) {
   return Lead.create(input);
@@ -41,10 +42,11 @@ export async function listLeads(params: {
   if (params.source) filter.source = params.source;
   if (params.assignedTo) filter.assignedTo = params.assignedTo;
   if (params.search) {
+    const term = escapeRegex(params.search);
     filter.$or = [
-      { name: { $regex: params.search, $options: 'i' } },
-      { mobile: { $regex: params.search, $options: 'i' } },
-      { email: { $regex: params.search, $options: 'i' } },
+      { name: { $regex: term, $options: 'i' } },
+      { mobile: { $regex: term, $options: 'i' } },
+      { email: { $regex: term, $options: 'i' } },
     ];
   }
   const [items, total] = await Promise.all([

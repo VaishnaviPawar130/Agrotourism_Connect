@@ -24,4 +24,7 @@ const enquirySchema = new Schema<IEnquiry>(
   { timestamps: { createdAt: true, updatedAt: false } }
 );
 
+// Supports the duplicate-submission lookup (same name + mobile within a short window).
+enquirySchema.index({ mobile: 1, createdAt: -1 });
+
 export const Enquiry = model<IEnquiry>('Enquiry', enquirySchema);

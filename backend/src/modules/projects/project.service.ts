@@ -2,6 +2,7 @@ import { FilterQuery } from 'mongoose';
 import { Project, IProject } from './project.model';
 import { CreateProjectInput, UpdateProjectInput } from './project.validation';
 import { ApiError } from '../../utils/ApiError';
+import { escapeRegex } from '../../utils/escapeRegex';
 import { generateProjectCode } from '../../utils/generateCode';
 
 function slugify(text: string) {
@@ -38,9 +39,10 @@ export async function listProjects(params: {
   if (params.projectType) filter.projectType = params.projectType;
   if (params.publicOnly) filter.isPublic = true;
   if (params.search) {
+    const term = escapeRegex(params.search);
     filter.$or = [
-      { projectName: { $regex: params.search, $options: 'i' } },
-      { location: { $regex: params.search, $options: 'i' } },
+      { projectName: { $regex: term, $options: 'i' } },
+      { location: { $regex: term, $options: 'i' } },
     ];
   }
   const [items, total] = await Promise.all([

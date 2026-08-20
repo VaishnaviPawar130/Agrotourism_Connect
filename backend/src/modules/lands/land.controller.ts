@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { sendSuccess } from '../../utils/apiResponse';
+import { ApiError } from '../../utils/ApiError';
 import { createLandSchema, updateLandSchema, updateLandStatusSchema } from './land.validation';
 import * as landService from './land.service';
 import { UserRole } from '../users/user.types';
@@ -16,7 +17,13 @@ function isPrivileged(role: UserRole) {
 
 export const createLandHandler = asyncHandler(async (req: Request, res: Response) => {
   const input = createLandSchema.parse(req.body);
-  const land = await landService.createLand(req.user!.id, input);
+  const { land, isDuplicate } = await landService.createLand(req.user!.id, input);
+
+  // On a duplicate click/retry, return the existing record rather than creating a
+  // second land submission and a second CRM lead.
+  if (isDuplicate) {
+    return sendSuccess(res, land, 'Land submitted successfully', 201);
+  }
 
   await leadService.createLeadFromSource({
     name: input.ownerName,
@@ -46,7 +53,10 @@ export const listLandsHandler = asyncHandler(async (req: Request, res: Response)
 });
 
 export const getLandHandler = asyncHandler(async (req: Request, res: Response) => {
-  const land = await landService.getLandById(req.params.id);
+  const land = await landService.getLandById(req.params.id, {
+    id: req.user!.id,
+    isPrivileged: isPrivileged(req.user!.role),
+  });
   sendSuccess(res, land, 'Land submission fetched');
 });
 
@@ -70,11 +80,25 @@ export const updateLandStatusHandler = asyncHandler(async (req: Request, res: Re
   sendSuccess(res, land, 'Land status updated');
 });
 
+const UPLOAD_FIELDS = ['photos', 'videos', 'documents'] as const;
+
 export const uploadLandFilesHandler = asyncHandler(async (req: Request, res: Response) => {
   const files = (req.files as Express.Multer.File[] | undefined) ?? [];
-  const field = (req.query.field as 'photos' | 'videos' | 'documents') ?? 'photos';
+  if (files.length === 0) throw ApiError.badRequest('At least one file is required');
+
+  // Only accept a known array field — an arbitrary `field` value would write to
+  // (and could overwrite) any property on the land document.
+  const requested = (req.query.field as string | undefined) ?? 'photos';
+  if (!UPLOAD_FIELDS.includes(requested as (typeof UPLOAD_FIELDS)[number])) {
+    throw ApiError.badRequest(`field must be one of: ${UPLOAD_FIELDS.join(', ')}`);
+  }
+  const field = requested as (typeof UPLOAD_FIELDS)[number];
+
   const paths = files.map((f) => `/uploads/${f.filename}`);
-  const land = await landService.addLandFiles(req.params.id, field, paths);
+  const land = await landService.addLandFiles(req.params.id, field, paths, {
+    id: req.user!.id,
+    isPrivileged: isPrivileged(req.user!.role),
+  });
   sendSuccess(res, land, 'Files uploaded');
 });
 

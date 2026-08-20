@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../../middleware/auth';
+import { validateObjectId } from '../../middleware/validateObjectId';
 import { UserRole } from '../users/user.types';
 import * as ctrl from './lead.controller';
 
@@ -10,8 +11,8 @@ router.use(authenticate, authorize(...STAFF));
 
 router.post('/', ctrl.createLeadHandler);
 router.get('/', ctrl.listLeadsHandler);
-router.get('/:id', ctrl.getLeadHandler);
-router.patch('/:id', ctrl.updateLeadHandler);
-router.delete('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), ctrl.deleteLeadHandler);
+router.get('/:id', validateObjectId(), ctrl.getLeadHandler);
+router.patch('/:id', validateObjectId(), ctrl.updateLeadHandler);
+router.delete('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), validateObjectId(), ctrl.deleteLeadHandler);
 
 export default router;
