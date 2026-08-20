@@ -1,3 +1,5 @@
+import fs from 'fs/promises';
+import path from 'path';
 import { FilterQuery } from 'mongoose';
 import { DocumentRecord, IDocumentRecord } from './document.model';
 import { CreateDocumentMetaInput } from './document.validation';
@@ -34,14 +36,19 @@ export async function listDocuments(
   if (params.land) filter.land = params.land;
 
   if (!PRIVILEGED_ROLES.includes(requester.role)) {
-    if (requester.role === UserRole.LANDOWNER) {
-      filter.$or = [{ visibility: DocumentVisibility.LANDOWNER, owner: requester.id }, { owner: requester.id }];
-    } else if (requester.role === UserRole.INVESTOR) {
-      filter.visibility = DocumentVisibility.AUTHORIZED_INVESTOR;
-      filter.owner = requester.id;
-    } else {
-      filter.owner = requester.id;
-    }
+    // Mirror of getDocumentForRequester: a non-privileged user only ever sees
+    // documents they are linked to, and only where visibility admits their role.
+    const roleVisibility =
+      requester.role === UserRole.LANDOWNER
+        ? DocumentVisibility.LANDOWNER
+        : requester.role === UserRole.INVESTOR
+          ? DocumentVisibility.AUTHORIZED_INVESTOR
+          : null;
+
+    filter.$and = [
+      { $or: [{ owner: requester.id }, { uploadedBy: requester.id }] },
+      roleVisibility ? { visibility: roleVisibility } : { _id: null },
+    ];
   }
 
   const [items, total] = await Promise.all([
@@ -54,19 +61,36 @@ export async function listDocuments(
   return { items, total, page, limit, totalPages: Math.ceil(total / limit) || 1 };
 }
 
+/**
+ * Resolves a document for a requester, enforcing visibility server-side.
+ *
+ * Document ids are guessable/enumerable, so this check is the only thing
+ * standing between an authenticated user and someone else's private land deed.
+ * A non-privileged requester must satisfy BOTH conditions:
+ *   1. they are linked to the document (owner, or the uploader), and
+ *   2. the document's visibility admits their role.
+ *
+ * Previously these were OR'd, which let any landowner download every document
+ * marked LANDOWNER (and any investor every AUTHORIZED_INVESTOR document),
+ * regardless of who it belonged to.
+ */
 export async function getDocumentForRequester(id: string, requester: { id: string; role: UserRole }) {
   const doc = await DocumentRecord.findById(id);
   if (!doc) throw ApiError.notFound('Document not found');
 
   if (PRIVILEGED_ROLES.includes(requester.role)) return doc;
 
-  const isOwner = doc.owner && String(doc.owner) === requester.id;
-  const visibilityMatches =
+  const isLinkedToRequester =
+    (doc.owner && String(doc.owner) === requester.id) || String(doc.uploadedBy) === requester.id;
+
+  const visibilityAdmitsRole =
     (requester.role === UserRole.LANDOWNER && doc.visibility === DocumentVisibility.LANDOWNER) ||
     (requester.role === UserRole.INVESTOR && doc.visibility === DocumentVisibility.AUTHORIZED_INVESTOR);
 
-  if (!isOwner && !visibilityMatches) {
-    throw ApiError.forbidden('You do not have access to this document');
+  if (!isLinkedToRequester || !visibilityAdmitsRole) {
+    // Deliberately 404, not 403: a 403 would confirm the document exists and
+    // let an attacker enumerate valid document ids.
+    throw ApiError.notFound('Document not found');
   }
   return doc;
 }
@@ -74,4 +98,14 @@ export async function getDocumentForRequester(id: string, requester: { id: strin
 export async function deleteDocument(id: string) {
   const doc = await DocumentRecord.findByIdAndDelete(id);
   if (!doc) throw ApiError.notFound('Document not found');
+
+  // Remove the file from disk too, so deleted private documents do not linger
+  // in the upload directory. A missing file is not an error here.
+  try {
+    await fs.unlink(path.resolve(doc.filePath));
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      console.error('[documents] Failed to remove file from disk:', doc.filePath, err);
+    }
+  }
 }

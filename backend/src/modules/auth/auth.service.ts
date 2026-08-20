@@ -5,7 +5,10 @@ import { User } from '../users/user.model';
 import { UserRole, UserStatus } from '../users/user.types';
 import { ApiError } from '../../utils/ApiError';
 import { env } from '../../config/env';
-import { RegisterInput, LoginInput } from './auth.validation';
+import { RegisterInput, LoginInput, SELF_ASSIGNABLE_ROLES } from './auth.validation';
+import { toPublicUser } from '../users/user.serialize';
+
+const BCRYPT_ROUNDS = 12;
 
 function signToken(payload: { id: string; role: UserRole; email: string }) {
   return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN } as SignOptions);
@@ -15,8 +18,10 @@ export async function registerUser(input: RegisterInput) {
   const existing = await User.findOne({ email: input.email.toLowerCase() });
   if (existing) throw ApiError.conflict('An account with this email already exists');
 
-  const passwordHash = await bcrypt.hash(input.password, 10);
-  const role = input.role && input.role !== UserRole.SUPER_ADMIN ? input.role : UserRole.LANDOWNER;
+  const passwordHash = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
+  // `role` is already constrained to the self-assignable set by registerSchema;
+  // defaulting here keeps the service safe even if called directly.
+  const role = input.role && SELF_ASSIGNABLE_ROLES.includes(input.role) ? input.role : UserRole.LANDOWNER;
 
   const user = await User.create({
     fullName: input.fullName,
@@ -30,7 +35,7 @@ export async function registerUser(input: RegisterInput) {
   });
 
   const token = signToken({ id: user.id, role: user.role, email: user.email });
-  return { user, token };
+  return { user: toPublicUser(user), token };
 }
 
 export async function loginUser(input: LoginInput) {
@@ -44,8 +49,7 @@ export async function loginUser(input: LoginInput) {
   if (user.status === UserStatus.INACTIVE) throw ApiError.forbidden('Your account is inactive');
 
   const token = signToken({ id: user.id, role: user.role, email: user.email });
-  user.passwordHash = undefined as unknown as string;
-  return { user, token };
+  return { user: toPublicUser(user), token };
 }
 
 export async function requestPasswordReset(email: string) {
@@ -71,7 +75,7 @@ export async function resetPassword(rawToken: string, newPassword: string) {
 
   if (!user) throw ApiError.badRequest('Reset token is invalid or has expired');
 
-  user.passwordHash = await bcrypt.hash(newPassword, 10);
+  user.passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
   user.resetPasswordToken = undefined;
   user.resetPasswordExpires = undefined;
   await user.save();

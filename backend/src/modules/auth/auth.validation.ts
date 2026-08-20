@@ -1,14 +1,24 @@
 import { z } from 'zod';
 import { UserRole } from '../users/user.types';
 
+/**
+ * Roles a visitor is allowed to self-assign at registration. Staff roles
+ * (SUPER_ADMIN / ADMIN / PROJECT_MANAGER) must only ever be granted by an
+ * existing admin through the users module, never by the registrant.
+ */
+export const SELF_ASSIGNABLE_ROLES = [UserRole.LANDOWNER, UserRole.INVESTOR] as const;
+
 export const registerSchema = z.object({
-  fullName: z.string().min(2),
-  email: z.string().email(),
-  mobile: z.string().min(7).max(15),
-  password: z.string().min(6),
-  role: z.nativeEnum(UserRole).optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
+  fullName: z.string().trim().min(2, 'Full name must be at least 2 characters').max(120),
+  email: z.string().trim().toLowerCase().email(),
+  mobile: z
+    .string()
+    .trim()
+    .regex(/^[+]?[0-9\s-]{7,15}$/, 'Enter a valid mobile number'),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+  role: z.enum(SELF_ASSIGNABLE_ROLES).optional(),
+  city: z.string().trim().max(100).optional(),
+  state: z.string().trim().max(100).optional(),
 });
 
 export const loginSchema = z.object({
@@ -22,7 +32,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(10),
-  newPassword: z.string().min(6),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters').max(128),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

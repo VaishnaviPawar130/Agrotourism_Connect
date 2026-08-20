@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { sendSuccess } from '../../utils/apiResponse';
-import { updateUserSchema } from './user.validation';
+import { updateUserSchema, changePasswordSchema } from './user.validation';
 import * as userService from './user.service';
+import { toPublicUser, toPublicUsers } from './user.serialize';
+import { ApiError } from '../../utils/ApiError';
 import { logAudit } from '../auditLogs/auditLog.service';
 
 export const listUsersHandler = asyncHandler(async (req: Request, res: Response) => {
@@ -14,35 +16,41 @@ export const listUsersHandler = asyncHandler(async (req: Request, res: Response)
     status,
     search,
   });
-  sendSuccess(res, result, 'Users fetched');
+  sendSuccess(res, { ...result, items: toPublicUsers(result.items) }, 'Users fetched');
 });
 
 export const getUserHandler = asyncHandler(async (req: Request, res: Response) => {
   const user = await userService.findUserById(req.params.id);
-  if (!user) return sendSuccess(res, null, 'User not found', 404);
-  sendSuccess(res, user, 'User fetched');
+  if (!user) throw ApiError.notFound('User not found');
+  sendSuccess(res, toPublicUser(user), 'User fetched');
 });
 
 export const getMeHandler = asyncHandler(async (req: Request, res: Response) => {
   const user = await userService.findUserById(req.user!.id);
-  sendSuccess(res, user, 'Current user fetched');
+  if (!user) throw ApiError.notFound('User not found');
+  sendSuccess(res, toPublicUser(user), 'Current user fetched');
 });
 
 export const updateUserHandler = asyncHandler(async (req: Request, res: Response) => {
   const input = updateUserSchema.parse(req.body);
-  const user = await userService.updateUser(req.params.id, input);
+  const user = await userService.updateUser(req.params.id, input, req.user!);
   await logAudit({ userId: req.user!.id, action: 'USER_UPDATED', entity: 'User', entityId: user.id });
-  sendSuccess(res, user, 'User updated');
+  sendSuccess(res, toPublicUser(user), 'User updated');
 });
 
 export const deleteUserHandler = asyncHandler(async (req: Request, res: Response) => {
+  // Guard against an admin deleting their own account and locking the platform out.
+  if (req.params.id === req.user!.id) {
+    throw ApiError.badRequest('You cannot delete your own account');
+  }
   await userService.deleteUser(req.params.id);
   await logAudit({ userId: req.user!.id, action: 'USER_DELETED', entity: 'User', entityId: req.params.id });
   sendSuccess(res, null, 'User deleted');
 });
 
 export const changePasswordHandler = asyncHandler(async (req: Request, res: Response) => {
-  const { oldPassword, newPassword } = req.body as { oldPassword: string; newPassword: string };
+  const { oldPassword, newPassword } = changePasswordSchema.parse(req.body);
   await userService.changePassword(req.user!.id, oldPassword, newPassword);
+  await logAudit({ userId: req.user!.id, action: 'PASSWORD_CHANGED', entity: 'User', entityId: req.user!.id });
   sendSuccess(res, null, 'Password changed successfully');
 });
