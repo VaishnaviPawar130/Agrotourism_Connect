@@ -35,6 +35,13 @@ const colorMap: Record<string, string> = {
   UNDER_DEVELOPMENT: 'bg-teal-100 text-teal-700',
   ON_HOLD: 'bg-orange-100 text-orange-700',
   CLOSED: 'bg-slate-100 text-slate-700',
+  IN_PROGRESS: 'bg-amber-100 text-amber-700',
+  FEASIBLE_WITH_CONDITIONS: 'bg-orange-100 text-orange-700',
+  EXCELLENT: 'bg-brand-forest/10 text-brand-forest',
+  GOOD: 'bg-green-100 text-green-700',
+  MODERATE: 'bg-amber-100 text-amber-700',
+  POOR: 'bg-red-100 text-red-700',
+  NOT_ASSESSED: 'bg-slate-100 text-slate-700',
 };
 
 export function StatusBadge({ status }: { status: string }) {

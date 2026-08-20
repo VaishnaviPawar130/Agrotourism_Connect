@@ -1,0 +1,22 @@
+export enum SuitabilityRating {
+  EXCELLENT = 'EXCELLENT',
+  GOOD = 'GOOD',
+  MODERATE = 'MODERATE',
+  POOR = 'POOR',
+  NOT_ASSESSED = 'NOT_ASSESSED',
+}
+
+export enum FeasibilityStatus {
+  DRAFT = 'DRAFT',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  FEASIBLE = 'FEASIBLE',
+  NOT_FEASIBLE = 'NOT_FEASIBLE',
+  FEASIBLE_WITH_CONDITIONS = 'FEASIBLE_WITH_CONDITIONS',
+}
+
+export enum RiskSeverity {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+}

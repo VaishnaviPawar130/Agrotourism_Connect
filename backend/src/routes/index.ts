@@ -11,6 +11,7 @@ import siteVisitRoutes from '../modules/siteVisits/siteVisit.route';
 import documentRoutes from '../modules/documents/document.route';
 import enquiryRoutes from '../modules/enquiries/enquiry.route';
 import dashboardRoutes from '../modules/dashboard/dashboard.route';
+import feasibilityRoutes from '../modules/feasibility/feasibility.route';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/site-visits', siteVisitRoutes);
 router.use('/documents', documentRoutes);
 router.use('/enquiries', enquiryRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/feasibility', feasibilityRoutes);
 
 export default router;

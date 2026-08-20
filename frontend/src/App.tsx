@@ -33,6 +33,8 @@ import { AdminInvestorsPage } from './pages/admin/AdminInvestorsPage';
 import { LeadsPage } from './pages/admin/LeadsPage';
 import { SiteVisitsPage } from './pages/admin/SiteVisitsPage';
 import { EnquiriesPage } from './pages/admin/EnquiriesPage';
+import { AdminFeasibilityPage } from './pages/admin/AdminFeasibilityPage';
+import { FeasibilityDetailPage } from './pages/admin/FeasibilityDetailPage';
 
 import { MyInterestsPage } from './pages/investor/MyInterestsPage';
 import { InvestorProfilePage } from './pages/investor/InvestorProfilePage';
@@ -90,6 +92,9 @@ export default function App() {
             <Route path="/dashboard/leads" element={<LeadsPage />} />
             <Route path="/dashboard/site-visits" element={<SiteVisitsPage />} />
             <Route path="/dashboard/enquiries" element={<EnquiriesPage />} />
+            <Route path="/dashboard/feasibility" element={<AdminFeasibilityPage />} />
+            <Route path="/dashboard/feasibility/:id" element={<FeasibilityDetailPage mode="assessment" />} />
+            <Route path="/dashboard/projects/:projectId/feasibility" element={<FeasibilityDetailPage mode="project" />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={[UserRole.INVESTOR]} />}>

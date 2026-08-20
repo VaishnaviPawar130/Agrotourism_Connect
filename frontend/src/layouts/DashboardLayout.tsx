@@ -14,6 +14,7 @@ import {
   LogOut,
   Menu,
   X,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { UserRole } from '../types';
@@ -23,6 +24,7 @@ const adminNav = [
   { label: 'Users', to: '/dashboard/users', icon: Users },
   { label: 'Lands', to: '/dashboard/lands', icon: MapPinned },
   { label: 'Projects', to: '/dashboard/projects', icon: Building2 },
+  { label: 'Feasibility', to: '/dashboard/feasibility', icon: ClipboardCheck },
   { label: 'Investors', to: '/dashboard/investors', icon: Landmark },
   { label: 'Leads', to: '/dashboard/leads', icon: Handshake },
   { label: 'Site Visits', to: '/dashboard/site-visits', icon: CalendarCheck },
@@ -125,7 +127,7 @@ export function DashboardLayout() {
         </div>
       )}
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-brand-border bg-white px-4 py-3 shadow-sm md:px-6">
           <div className="flex items-center gap-3">
             <button

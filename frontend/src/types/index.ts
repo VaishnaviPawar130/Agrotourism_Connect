@@ -228,6 +228,78 @@ export interface PaginatedResult<T> {
   totalPages: number;
 }
 
+export enum SuitabilityRating {
+  EXCELLENT = 'EXCELLENT',
+  GOOD = 'GOOD',
+  MODERATE = 'MODERATE',
+  POOR = 'POOR',
+  NOT_ASSESSED = 'NOT_ASSESSED',
+}
+
+export enum FeasibilityStatus {
+  DRAFT = 'DRAFT',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  FEASIBLE = 'FEASIBLE',
+  NOT_FEASIBLE = 'NOT_FEASIBLE',
+  FEASIBLE_WITH_CONDITIONS = 'FEASIBLE_WITH_CONDITIONS',
+}
+
+export enum RiskSeverity {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+}
+
+export interface FeasibilityRisk {
+  description: string;
+  severity: RiskSeverity;
+  mitigation?: string;
+}
+
+export interface FeasibilityAssessment {
+  _id: string;
+  project: Project | string;
+  land?: { _id: string; landTitle: string; district: string; state: string } | string;
+
+  landSuitability: SuitabilityRating;
+  usableLandArea?: number;
+  usableLandAreaUnit?: string;
+  landSuitabilityNotes?: string;
+
+  accessibilityRating: SuitabilityRating;
+  roadConnectivity: SuitabilityRating;
+  nearestHighwayDistanceKm?: number;
+  nearestRailwayDistanceKm?: number;
+  nearestAirportDistanceKm?: number;
+  publicTransportAvailable?: boolean;
+  accessibilityNotes?: string;
+
+  waterAvailability: SuitabilityRating;
+  waterSourceDetails?: string;
+  electricityAvailability: SuitabilityRating;
+  electricityDetails?: string;
+
+  existingInfrastructureNotes?: string;
+  existingStructuresUsable?: boolean;
+
+  surroundingAttractions?: string;
+  tourismPotential: SuitabilityRating;
+  tourismPotentialNotes?: string;
+
+  developmentSuitability: SuitabilityRating;
+  risks: FeasibilityRisk[];
+  recommendations?: string;
+  adminNotes?: string;
+
+  status: FeasibilityStatus;
+  assessedBy?: { _id: string; fullName: string } | string;
+  assessedAt?: string;
+  createdBy?: { _id: string; fullName: string } | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ApiSuccessResponse<T> {
   success: true;
   message: string;

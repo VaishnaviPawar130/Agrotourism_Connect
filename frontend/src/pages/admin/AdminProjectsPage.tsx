@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { FilterBar } from '../../components/FilterBar';
@@ -66,6 +67,14 @@ export function AdminProjectsPage() {
     { header: 'Type', accessor: (p) => p.projectType.replaceAll('_', ' ') },
     { header: 'Status', accessor: (p) => <StatusBadge status={p.status} /> },
     { header: 'Public', accessor: (p) => (p.isPublic ? 'Yes' : 'No') },
+    {
+      header: 'Feasibility',
+      accessor: (p) => (
+        <Link to={`/dashboard/projects/${p._id}/feasibility`} className="text-sm font-medium text-brand-forest hover:underline">
+          Assess
+        </Link>
+      ),
+    },
   ];
 
   return (
