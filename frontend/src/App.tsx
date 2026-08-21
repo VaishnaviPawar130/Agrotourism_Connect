@@ -35,6 +35,13 @@ import { SiteVisitsPage } from './pages/admin/SiteVisitsPage';
 import { EnquiriesPage } from './pages/admin/EnquiriesPage';
 import { AdminFeasibilityPage } from './pages/admin/AdminFeasibilityPage';
 import { FeasibilityDetailPage } from './pages/admin/FeasibilityDetailPage';
+import { AdminWorkItemsPage } from './pages/admin/AdminWorkItemsPage';
+import { AdminVendorsPage } from './pages/admin/AdminVendorsPage';
+import { AdminApprovalsPage } from './pages/admin/AdminApprovalsPage';
+import { AdminInvestmentsPage } from './pages/admin/AdminInvestmentsPage';
+import { AdminMilestonesPage } from './pages/admin/AdminMilestonesPage';
+import { AdminBudgetPage } from './pages/admin/AdminBudgetPage';
+import { AdminProgressDashboardPage } from './pages/admin/AdminProgressDashboardPage';
 
 import { MyInterestsPage } from './pages/investor/MyInterestsPage';
 import { InvestorProfilePage } from './pages/investor/InvestorProfilePage';
@@ -95,6 +102,13 @@ export default function App() {
             <Route path="/dashboard/feasibility" element={<AdminFeasibilityPage />} />
             <Route path="/dashboard/feasibility/:id" element={<FeasibilityDetailPage mode="assessment" />} />
             <Route path="/dashboard/projects/:projectId/feasibility" element={<FeasibilityDetailPage mode="project" />} />
+            <Route path="/dashboard/work-items" element={<AdminWorkItemsPage />} />
+            <Route path="/dashboard/vendors" element={<AdminVendorsPage />} />
+            <Route path="/dashboard/approvals" element={<AdminApprovalsPage />} />
+            <Route path="/dashboard/investments" element={<AdminInvestmentsPage />} />
+            <Route path="/dashboard/milestones" element={<AdminMilestonesPage />} />
+            <Route path="/dashboard/budget" element={<AdminBudgetPage />} />
+            <Route path="/dashboard/progress" element={<AdminProgressDashboardPage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={[UserRole.INVESTOR]} />}>

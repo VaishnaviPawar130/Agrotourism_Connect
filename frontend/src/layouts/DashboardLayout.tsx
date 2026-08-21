@@ -15,6 +15,13 @@ import {
   Menu,
   X,
   ClipboardCheck,
+  HardHat,
+  Wrench,
+  Stamp,
+  Wallet,
+  Flag,
+  IndianRupee,
+  Gauge,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { UserRole } from '../types';
@@ -25,6 +32,13 @@ const adminNav = [
   { label: 'Lands', to: '/dashboard/lands', icon: MapPinned },
   { label: 'Projects', to: '/dashboard/projects', icon: Building2 },
   { label: 'Feasibility', to: '/dashboard/feasibility', icon: ClipboardCheck },
+  { label: 'Progress Dashboard', to: '/dashboard/progress', icon: Gauge },
+  { label: 'Work Items', to: '/dashboard/work-items', icon: HardHat },
+  { label: 'Vendors', to: '/dashboard/vendors', icon: Wrench },
+  { label: 'Approvals', to: '/dashboard/approvals', icon: Stamp },
+  { label: 'Investments', to: '/dashboard/investments', icon: Wallet },
+  { label: 'Milestones', to: '/dashboard/milestones', icon: Flag },
+  { label: 'Budget vs Actual', to: '/dashboard/budget', icon: IndianRupee },
   { label: 'Investors', to: '/dashboard/investors', icon: Landmark },
   { label: 'Leads', to: '/dashboard/leads', icon: Handshake },
   { label: 'Site Visits', to: '/dashboard/site-visits', icon: CalendarCheck },

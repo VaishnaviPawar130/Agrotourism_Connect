@@ -300,6 +300,408 @@ export interface FeasibilityAssessment {
   updatedAt: string;
 }
 
+export enum WorkItemCategory {
+  ROAD = 'ROAD',
+  WATER = 'WATER',
+  ELECTRICITY = 'ELECTRICITY',
+  DRAINAGE = 'DRAINAGE',
+  LANDSCAPING = 'LANDSCAPING',
+  PLANTATION = 'PLANTATION',
+  COTTAGE_VILLA = 'COTTAGE_VILLA',
+  POOL = 'POOL',
+  RESTAURANT = 'RESTAURANT',
+  GAZEBO = 'GAZEBO',
+  AMENITIES = 'AMENITIES',
+  OTHER = 'OTHER',
+}
+
+export enum WorkItemStatus {
+  NOT_STARTED = 'NOT_STARTED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  ON_HOLD = 'ON_HOLD',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface ProjectWorkItem {
+  _id: string;
+  project: Project | string;
+  title: string;
+  category: WorkItemCategory;
+  estimatedCost?: number;
+  actualCost?: number;
+  startDate?: string;
+  dueDate?: string;
+  completionDate?: string;
+  progress: number;
+  status: WorkItemStatus;
+  responsiblePerson?: { _id: string; fullName: string } | string;
+  notes?: string;
+  createdBy?: { _id: string; fullName: string } | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export enum VendorCategory {
+  CIVIL = 'CIVIL',
+  ARCHITECT = 'ARCHITECT',
+  COTTAGE_MANUFACTURER = 'COTTAGE_MANUFACTURER',
+  LANDSCAPING = 'LANDSCAPING',
+  POOL = 'POOL',
+  ELECTRICAL = 'ELECTRICAL',
+  PLUMBING = 'PLUMBING',
+  FURNITURE = 'FURNITURE',
+  SUPPLIER = 'SUPPLIER',
+  MARKETING = 'MARKETING',
+  OTHER = 'OTHER',
+}
+
+export enum VendorWorkStatus {
+  NOT_STARTED = 'NOT_STARTED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  ON_HOLD = 'ON_HOLD',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum VendorPaymentStatus {
+  NOT_PAID = 'NOT_PAID',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
+  PAID = 'PAID',
+}
+
+export interface Vendor {
+  _id: string;
+  vendorName: string;
+  category: VendorCategory;
+  contactPerson?: string;
+  phone: string;
+  email?: string;
+  address?: string;
+
+  project: Project | string;
+  workItem?: { _id: string; title: string; category: WorkItemCategory; status: WorkItemStatus } | string;
+  assignedWork?: string;
+
+  quotationAmount?: number;
+  workOrderNumber?: string;
+  workOrderDate?: string;
+
+  startDate?: string;
+  expectedCompletionDate?: string;
+  actualCompletionDate?: string;
+
+  paymentStatus: VendorPaymentStatus;
+  workStatus: VendorWorkStatus;
+  notes?: string;
+
+  createdBy?: { _id: string; fullName: string } | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export enum ApprovalType {
+  LAND_CONVERSION = 'LAND_CONVERSION',
+  ENVIRONMENTAL_CLEARANCE = 'ENVIRONMENTAL_CLEARANCE',
+  BUILDING_PLAN = 'BUILDING_PLAN',
+  FIRE_NOC = 'FIRE_NOC',
+  TOURISM_LICENSE = 'TOURISM_LICENSE',
+  WATER_NOC = 'WATER_NOC',
+  ELECTRICITY_CONNECTION = 'ELECTRICITY_CONNECTION',
+  POLLUTION_CONTROL = 'POLLUTION_CONTROL',
+  FOOD_LICENSE = 'FOOD_LICENSE',
+  LIQUOR_LICENSE = 'LIQUOR_LICENSE',
+  LABOUR_LICENSE = 'LABOUR_LICENSE',
+  OTHER = 'OTHER',
+}
+
+export enum ApprovalStatus {
+  NOT_STARTED = 'NOT_STARTED',
+  APPLIED = 'APPLIED',
+  UNDER_PROCESS = 'UNDER_PROCESS',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  EXPIRED = 'EXPIRED',
+}
+
+export interface Approval {
+  _id: string;
+  project: Project | string;
+  approvalName: string;
+  approvalType: ApprovalType;
+  authority?: string;
+  referenceNumber?: string;
+
+  appliedDate?: string;
+  expectedApprovalDate?: string;
+  approvalDate?: string;
+  expiryDate?: string;
+
+  status: ApprovalStatus;
+  responsiblePerson?: { _id: string; fullName: string } | string;
+  remarks?: string;
+  document?: { _id: string; title: string; originalName: string } | string;
+
+  createdBy?: { _id: string; fullName: string } | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export enum InvestmentType {
+  EQUITY = 'EQUITY',
+  PROFIT_PARTICIPATION = 'PROFIT_PARTICIPATION',
+  PROJECT_INVESTMENT = 'PROJECT_INVESTMENT',
+  DEBT = 'DEBT',
+  STRATEGIC = 'STRATEGIC',
+  OTHER = 'OTHER',
+}
+
+export enum InvestmentStatus {
+  INTERESTED = 'INTERESTED',
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  DUE_DILIGENCE = 'DUE_DILIGENCE',
+  COMMITTED = 'COMMITTED',
+  PARTIALLY_FUNDED = 'PARTIALLY_FUNDED',
+  FUNDED = 'FUNDED',
+  WITHDRAWN = 'WITHDRAWN',
+  REJECTED = 'REJECTED',
+  CLOSED = 'CLOSED',
+}
+
+export enum DueDiligenceStatus {
+  NOT_STARTED = 'NOT_STARTED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
+
+export enum PaymentMode {
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  CHEQUE = 'CHEQUE',
+  UPI = 'UPI',
+  CASH = 'CASH',
+  OTHER = 'OTHER',
+}
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+}
+
+export interface InvestmentPayment {
+  _id: string;
+  amount: number;
+  paymentDate: string;
+  paymentMode: PaymentMode;
+  paymentModeOther?: string;
+  referenceNumber?: string;
+  status: PaymentStatus;
+  notes?: string;
+  createdBy?: { _id: string; fullName: string } | string;
+  createdAt: string;
+}
+
+export interface Investment {
+  _id: string;
+  project: Project | string;
+  investor: (Pick<InvestorProfile, '_id' | 'investorName' | 'company' | 'mobile' | 'email'>) | string;
+  investmentType: InvestmentType;
+
+  proposedAmount?: number;
+  committedAmount?: number;
+  amountReceived: number;
+
+  commitmentDate?: string;
+  expectedFundingDate?: string;
+
+  status: InvestmentStatus;
+  dueDiligenceStatus: DueDiligenceStatus;
+  agreementDocument?: { _id: string; title: string; originalName: string } | string;
+  notes?: string;
+
+  payments: InvestmentPayment[];
+
+  createdBy?: { _id: string; fullName: string } | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export enum MilestoneCategory {
+  PLANNING = 'PLANNING',
+  APPROVAL = 'APPROVAL',
+  INFRASTRUCTURE = 'INFRASTRUCTURE',
+  CONSTRUCTION = 'CONSTRUCTION',
+  LANDSCAPING = 'LANDSCAPING',
+  PLANTATION = 'PLANTATION',
+  AMENITIES = 'AMENITIES',
+  OPERATIONS_READINESS = 'OPERATIONS_READINESS',
+  OTHER = 'OTHER',
+}
+
+export enum MilestoneStatus {
+  NOT_STARTED = 'NOT_STARTED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  DELAYED = 'DELAYED',
+  COMPLETED = 'COMPLETED',
+  ON_HOLD = 'ON_HOLD',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface Milestone {
+  _id: string;
+  project: Project | string;
+  title: string;
+  description?: string;
+  category: MilestoneCategory;
+
+  targetDate?: string;
+  actualCompletionDate?: string;
+
+  progress: number;
+  status: MilestoneStatus;
+  responsiblePerson?: { _id: string; fullName: string } | string;
+  workItem?: { _id: string; title: string; category: WorkItemCategory; status: WorkItemStatus } | string;
+  notes?: string;
+
+  createdBy?: { _id: string; fullName: string } | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkItemBudgetLine {
+  _id: string;
+  title: string;
+  category: WorkItemCategory;
+  status: WorkItemStatus;
+  estimatedCost: number;
+  actualCost: number;
+  varianceAmount: number;
+  variancePercent: number | null;
+  overBudget: boolean;
+}
+
+export interface CategoryBudgetLine {
+  category: WorkItemCategory;
+  estimatedCost: number;
+  actualCost: number;
+  varianceAmount: number;
+  variancePercent: number | null;
+  overBudget: boolean;
+  workItemCount: number;
+}
+
+export interface VendorSupportingDetail {
+  _id: string;
+  vendorName: string;
+  category: string;
+  workItem?: string;
+  quotationAmount?: number;
+  workOrderNumber?: string;
+  workStatus: string;
+  paymentStatus: string;
+}
+
+export type BudgetStatus = 'OVER_BUDGET' | 'UNDER_BUDGET' | 'ON_BUDGET';
+
+export interface ProjectBudgetSummary {
+  project: { _id: string; projectName: string; projectCode: string; location: string };
+
+  totalEstimatedBudget: number;
+  totalActualCost: number;
+  remainingBudget: number;
+  varianceAmount: number;
+  variancePercent: number | null;
+  budgetUtilizationPercent: number | null;
+  budgetStatus: BudgetStatus;
+
+  workItemsWithoutEstimate: number;
+  workItemsWithoutActual: number;
+
+  categoryBreakdown: CategoryBudgetLine[];
+  workItemBreakdown: WorkItemBudgetLine[];
+  vendorSupportingDetails: VendorSupportingDetail[];
+}
+
+export type ProjectHealthStatus = 'ON_TRACK' | 'ATTENTION_REQUIRED' | 'AT_RISK';
+
+export interface WorkProgressSummary {
+  overallProgressPercent: number | null;
+  totalWorkItems: number;
+  completed: number;
+  inProgress: number;
+  onHold: number;
+  notStarted: number;
+  cancelled: number;
+  overdueCount: number;
+  recentWorkItems: { _id: string; title: string; category: string; status: string; progress: number; dueDate: string | null }[];
+  overdueWorkItems: { _id: string; title: string; category: string; status: string; dueDate: string | null }[];
+}
+
+export interface ApprovalsSummary {
+  total: number;
+  approved: number;
+  underProcess: number;
+  pending: number;
+  rejectedOrExpired: number;
+}
+
+export interface VendorsSummary {
+  total: number;
+  active: number;
+  completed: number;
+  paymentStatusCounts: Record<string, number>;
+}
+
+export interface InvestmentsSummary {
+  proposedTotal: number;
+  committedTotal: number;
+  receivedTotal: number;
+  fundingProgressPercent: number | null;
+  statusCounts: Record<string, number>;
+}
+
+export interface MilestonesSummary {
+  total: number;
+  completed: number;
+  upcoming: { _id: string; title: string; targetDate: string | null; status: string }[];
+  overdue: { _id: string; title: string; targetDate: string | null; status: string }[];
+  overdueCount: number;
+  nextMilestone: { _id: string; title: string; targetDate: string | null; status: string } | null;
+}
+
+export interface ProjectHealthResult {
+  status: ProjectHealthStatus;
+  reasons: string[];
+}
+
+export interface ProjectProgressDashboard {
+  project: { _id: string; projectName: string; projectCode: string; location: string };
+
+  summaryCards: {
+    overallProjectProgressPercent: number | null;
+    estimatedBudget: number;
+    actualCost: number;
+    budgetUtilizationPercent: number | null;
+    totalWorkItems: number;
+    completedWorkItems: number;
+    delayedOrPendingWork: number;
+    pendingApprovals: number;
+    activeVendors: number;
+    committedInvestment: number;
+    amountReceived: number;
+    upcomingMilestones: number;
+  };
+
+  workProgress: WorkProgressSummary;
+  budget: ProjectBudgetSummary;
+  approvals: ApprovalsSummary;
+  vendors: VendorsSummary;
+  investments: InvestmentsSummary;
+  milestones: MilestonesSummary;
+  health: ProjectHealthResult;
+}
+
 export interface ApiSuccessResponse<T> {
   success: true;
   message: string;
