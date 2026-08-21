@@ -12,6 +12,13 @@ import documentRoutes from '../modules/documents/document.route';
 import enquiryRoutes from '../modules/enquiries/enquiry.route';
 import dashboardRoutes from '../modules/dashboard/dashboard.route';
 import feasibilityRoutes from '../modules/feasibility/feasibility.route';
+import workItemRoutes from '../modules/workItems/workItem.route';
+import vendorRoutes from '../modules/vendors/vendor.route';
+import approvalRoutes from '../modules/approvals/approval.route';
+import investmentRoutes from '../modules/investments/investment.route';
+import milestoneRoutes from '../modules/milestones/milestone.route';
+import budgetRoutes from '../modules/budget/budget.route';
+import progressDashboardRoutes from '../modules/progressDashboard/progressDashboard.route';
 
 const router = Router();
 
@@ -28,5 +35,12 @@ router.use('/documents', documentRoutes);
 router.use('/enquiries', enquiryRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/feasibility', feasibilityRoutes);
+router.use('/work-items', workItemRoutes);
+router.use('/vendors', vendorRoutes);
+router.use('/approvals', approvalRoutes);
+router.use('/investments', investmentRoutes);
+router.use('/milestones', milestoneRoutes);
+router.use('/budget', budgetRoutes);
+router.use('/progress-dashboard', progressDashboardRoutes);
 
 export default router;
