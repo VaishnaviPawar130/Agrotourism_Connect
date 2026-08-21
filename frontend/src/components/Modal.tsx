@@ -16,22 +16,26 @@ export function Modal({
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-  // Close on Escape, and lock background scroll while the dialog is open.
+  // Move focus into the dialog when it opens, and lock background scroll
+  // while it's open. Keyed only on `open` so an inline onClose prop (a new
+  // function identity on every parent render) doesn't re-run this and steal
+  // focus back to the panel on every keystroke inside the dialog.
   useEffect(() => {
     if (!open) return;
 
     previouslyFocused.current = document.activeElement as HTMLElement | null;
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
     }
     document.addEventListener('keydown', onKeyDown);
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // Move focus into the dialog so keyboard and screen-reader users land here.
     panelRef.current?.focus();
 
     return () => {
@@ -40,7 +44,7 @@ export function Modal({
       // Return focus to whatever opened the dialog.
       previouslyFocused.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   const widthClass = size === 'sm' ? 'max-w-md' : size === 'lg' ? 'max-w-3xl' : 'max-w-xl';

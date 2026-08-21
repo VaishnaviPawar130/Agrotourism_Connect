@@ -218,14 +218,18 @@ export function AuthModal() {
   const close = useAuthModalStore((s) => s.close);
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const closeRef = useRef(close);
+  closeRef.current = close;
 
+  // Keyed only on `open` so a re-render while the dialog is open never
+  // re-runs this and steals focus back to the panel (e.g. mid-typing).
   useEffect(() => {
     if (!open) return;
 
     previouslyFocused.current = document.activeElement as HTMLElement | null;
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') close();
+      if (event.key === 'Escape') closeRef.current();
     }
     document.addEventListener('keydown', onKeyDown);
 
@@ -239,7 +243,7 @@ export function AuthModal() {
       document.body.style.overflow = previousOverflow;
       previouslyFocused.current?.focus?.();
     };
-  }, [open, close]);
+  }, [open]);
 
   if (!open) return null;
 
