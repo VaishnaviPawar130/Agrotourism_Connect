@@ -11,6 +11,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Textarea } from '../../components/Textarea';
+import { ApiErrorBanner } from '../../components/ApiErrorBanner';
 import {
   listInvestments,
   createInvestment,
@@ -34,6 +35,8 @@ import {
   Project,
   InvestorProfile,
 } from '../../types';
+import { investmentFormSchema, paymentFormSchema } from '../../validation/investment';
+import { validateForm, firstFieldError } from '../../validation/validateForm';
 
 const typeOptions = Object.values(InvestmentType).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
 const statusOptions = Object.values(InvestmentStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
@@ -114,6 +117,7 @@ export function AdminInvestmentsPage() {
   const [form, setForm] = useState<InvestmentFormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [deleteTarget, setDeleteTarget] = useState<Investment | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -121,6 +125,7 @@ export function AdminInvestmentsPage() {
   const [paymentsTarget, setPaymentsTarget] = useState<Investment | null>(null);
   const [paymentForm, setPaymentForm] = useState<PaymentInput>(emptyPaymentForm);
   const [paymentError, setPaymentError] = useState('');
+  const [paymentFieldErrors, setPaymentFieldErrors] = useState<Record<string, string>>({});
   const [addingPayment, setAddingPayment] = useState(false);
 
   function load() {
@@ -169,6 +174,7 @@ export function AdminInvestmentsPage() {
     setEditingId(null);
     setForm(emptyForm);
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -188,18 +194,21 @@ export function AdminInvestmentsPage() {
       notes: inv.notes ?? '',
     });
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
   async function handleSave() {
-    if (!form.project) return setFormError('Project is required');
-    if (!form.investor) return setFormError('Investor is required');
-    if (!form.investmentType) return setFormError('Investment type is required');
-    if (form.proposedAmount != null && form.proposedAmount < 0) return setFormError('Proposed amount cannot be negative');
-    if (form.committedAmount != null && form.committedAmount < 0) return setFormError('Committed amount cannot be negative');
+    const result = validateForm(investmentFormSchema, form);
+    if (!result.success) {
+      setFieldErrors(result.fieldErrors);
+      setFormError(firstFieldError(result.fieldErrors) ?? '');
+      return;
+    }
 
     setSaving(true);
     setFormError('');
+    setFieldErrors({});
     const payload = {
       ...form,
       investmentType: form.investmentType as InvestmentType,
@@ -244,18 +253,21 @@ export function AdminInvestmentsPage() {
     setPaymentsTarget(inv);
     setPaymentForm(emptyPaymentForm);
     setPaymentError('');
+    setPaymentFieldErrors({});
   }
 
   async function handleAddPayment() {
     if (!paymentsTarget) return;
-    if (!paymentForm.amount || paymentForm.amount <= 0) return setPaymentError('Amount must be greater than 0');
-    if (!paymentForm.paymentDate) return setPaymentError('Payment date is required');
-    if (paymentForm.paymentMode === PaymentMode.OTHER && !paymentForm.paymentModeOther?.trim()) {
-      return setPaymentError('Please describe the payment mode');
+    const result = validateForm(paymentFormSchema, paymentForm);
+    if (!result.success) {
+      setPaymentFieldErrors(result.fieldErrors);
+      setPaymentError(firstFieldError(result.fieldErrors) ?? '');
+      return;
     }
 
     setAddingPayment(true);
     setPaymentError('');
+    setPaymentFieldErrors({});
     try {
       const updated = await addPayment(paymentsTarget._id, paymentForm);
       setPaymentsTarget(updated);
@@ -366,7 +378,7 @@ export function AdminInvestmentsPage() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Edit Investment' : 'New Investment'} size="lg">
         <div className="space-y-4">
-          {formError && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <ApiErrorBanner message={formError} />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Select
@@ -375,7 +387,8 @@ export function AdminInvestmentsPage() {
               placeholder="Select project"
               value={form.project}
               disabled={!!editingId}
-              onChange={(e) => setForm({ ...form, project: e.target.value, agreementDocument: undefined })}
+              error={fieldErrors.project}
+              onChange={(e) => { setForm({ ...form, project: e.target.value, agreementDocument: undefined }); setFieldErrors((f) => ({ ...f, project: '' })); }}
             />
             <Select
               label="Investor"
@@ -383,7 +396,8 @@ export function AdminInvestmentsPage() {
               placeholder="Select investor"
               value={form.investor}
               disabled={!!editingId}
-              onChange={(e) => setForm({ ...form, investor: e.target.value })}
+              error={fieldErrors.investor}
+              onChange={(e) => { setForm({ ...form, investor: e.target.value }); setFieldErrors((f) => ({ ...f, investor: '' })); }}
             />
           </div>
 
@@ -393,7 +407,8 @@ export function AdminInvestmentsPage() {
               options={typeOptions}
               placeholder="Select type"
               value={form.investmentType}
-              onChange={(e) => setForm({ ...form, investmentType: e.target.value as InvestmentType })}
+              error={fieldErrors.investmentType}
+              onChange={(e) => { setForm({ ...form, investmentType: e.target.value as InvestmentType }); setFieldErrors((f) => ({ ...f, investmentType: '' })); }}
             />
             <Select
               label="Due Diligence Status"
@@ -409,14 +424,16 @@ export function AdminInvestmentsPage() {
               type="number"
               min={0}
               value={form.proposedAmount ?? ''}
-              onChange={(e) => setForm({ ...form, proposedAmount: e.target.value ? Number(e.target.value) : undefined })}
+              error={fieldErrors.proposedAmount}
+              onChange={(e) => { setForm({ ...form, proposedAmount: e.target.value ? Number(e.target.value) : undefined }); setFieldErrors((f) => ({ ...f, proposedAmount: '' })); }}
             />
             <Input
               label="Committed Amount"
               type="number"
               min={0}
               value={form.committedAmount ?? ''}
-              onChange={(e) => setForm({ ...form, committedAmount: e.target.value ? Number(e.target.value) : undefined })}
+              error={fieldErrors.committedAmount}
+              onChange={(e) => { setForm({ ...form, committedAmount: e.target.value ? Number(e.target.value) : undefined }); setFieldErrors((f) => ({ ...f, committedAmount: '' })); }}
             />
           </div>
 
@@ -451,10 +468,10 @@ export function AdminInvestmentsPage() {
             onChange={(e) => setForm({ ...form, agreementDocument: e.target.value || undefined })}
           />
 
-          <Textarea label="Notes" value={form.notes ?? ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+          <Textarea label="Notes" value={form.notes ?? ''} error={fieldErrors.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
 
-          <Button className="w-full" loading={saving} onClick={handleSave}>
-            {editingId ? 'Save Changes' : 'Create Investment'}
+          <Button className="w-full" loading={saving} disabled={saving} onClick={handleSave}>
+            {saving ? 'Saving...' : editingId ? 'Save Changes' : 'Create Investment'}
           </Button>
         </div>
       </Modal>
@@ -513,7 +530,9 @@ export function AdminInvestmentsPage() {
 
             <div className="border-t border-brand-border pt-4">
               <h3 className="mb-3 text-sm font-semibold text-brand-charcoal">Add Payment</h3>
-              {paymentError && <div className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{paymentError}</div>}
+              <div className="mb-3">
+                <ApiErrorBanner message={paymentError} />
+              </div>
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Input
@@ -521,13 +540,15 @@ export function AdminInvestmentsPage() {
                     type="number"
                     min={0}
                     value={paymentForm.amount || ''}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value ? Number(e.target.value) : 0 })}
+                    error={paymentFieldErrors.amount}
+                    onChange={(e) => { setPaymentForm({ ...paymentForm, amount: e.target.value ? Number(e.target.value) : 0 }); setPaymentFieldErrors((f) => ({ ...f, amount: '' })); }}
                   />
                   <Input
                     label="Payment Date"
                     type="date"
                     value={paymentForm.paymentDate}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
+                    error={paymentFieldErrors.paymentDate}
+                    onChange={(e) => { setPaymentForm({ ...paymentForm, paymentDate: e.target.value }); setPaymentFieldErrors((f) => ({ ...f, paymentDate: '' })); }}
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -535,7 +556,7 @@ export function AdminInvestmentsPage() {
                     label="Payment Mode"
                     options={paymentModeOptions}
                     value={paymentForm.paymentMode}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, paymentMode: e.target.value })}
+                    onChange={(e) => { setPaymentForm({ ...paymentForm, paymentMode: e.target.value }); setPaymentFieldErrors((f) => ({ ...f, paymentModeOther: '' })); }}
                   />
                   <Select
                     label="Status"
@@ -548,7 +569,8 @@ export function AdminInvestmentsPage() {
                   <Input
                     label="Describe Payment Mode"
                     value={paymentForm.paymentModeOther ?? ''}
-                    onChange={(e) => setPaymentForm({ ...paymentForm, paymentModeOther: e.target.value })}
+                    error={paymentFieldErrors.paymentModeOther}
+                    onChange={(e) => { setPaymentForm({ ...paymentForm, paymentModeOther: e.target.value }); setPaymentFieldErrors((f) => ({ ...f, paymentModeOther: '' })); }}
                   />
                 )}
                 <Input
@@ -561,8 +583,8 @@ export function AdminInvestmentsPage() {
                   value={paymentForm.notes ?? ''}
                   onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
                 />
-                <Button className="w-full" loading={addingPayment} onClick={handleAddPayment}>
-                  Add Payment
+                <Button className="w-full" loading={addingPayment} disabled={addingPayment} onClick={handleAddPayment}>
+                  {addingPayment ? 'Adding...' : 'Add Payment'}
                 </Button>
               </div>
             </div>

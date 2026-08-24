@@ -5,10 +5,10 @@ import { PageBanner } from '../../components/PageBanner';
 import { LoadingState } from '../../components/LoadingState';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
-import { listPublicProjects } from '../../services/projectService';
+import { listPublicProjects, resolveProjectThumbnailUrl } from '../../services/projectService';
 import { getErrorMessage } from '../../services/api';
 import { Project } from '../../types';
-import { images, projectFallbackImages } from '../../assets/images';
+import { images, noProjectThumbnail } from '../../assets/images';
 
 export function InvestmentsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -41,8 +41,8 @@ export function InvestmentsPage() {
           <EmptyState title="No opportunities published yet" />
         ) : (
           <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((p, i) => {
-              const cardImage = p.images?.[0] || projectFallbackImages[i % projectFallbackImages.length];
+            {projects.map((p) => {
+              const cardImage = p.images?.[0] || resolveProjectThumbnailUrl(p) || noProjectThumbnail;
               return (
                 <div key={p._id} className="group overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm transition-all duration-200 hover:-translate-y-[3px] hover:shadow-md">
                   <div className="relative h-44 overflow-hidden">

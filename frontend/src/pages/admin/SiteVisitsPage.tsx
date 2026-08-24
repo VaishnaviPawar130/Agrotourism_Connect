@@ -7,21 +7,28 @@ import { Select } from '../../components/Select';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
 import { Input } from '../../components/Input';
+import { ApiErrorBanner } from '../../components/ApiErrorBanner';
 import { listSiteVisits, createSiteVisit, updateSiteVisit } from '../../services/siteVisitService';
+import { listProjects } from '../../services/projectService';
 import { getErrorMessage } from '../../services/api';
 import { SiteVisit, SiteVisitStatus, Lead, Project } from '../../types';
+import { siteVisitFormSchema } from '../../validation/siteVisit';
+import { validateForm, firstFieldError } from '../../validation/validateForm';
 
 const statusOptions = Object.values(SiteVisitStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
+
+const emptyForm = { project: '', visitDate: '', meetingPoint: '' };
 
 export function SiteVisitsPage() {
   const [visits, setVisits] = useState<SiteVisit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [modalOpen, setModalOpen] = useState(false);
-  const [visitDate, setVisitDate] = useState('');
-  const [meetingPoint, setMeetingPoint] = useState('');
+  const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   function load() {
     setLoading(true);
@@ -37,23 +44,39 @@ export function SiteVisitsPage() {
 
   useEffect(load, []);
 
+  useEffect(() => {
+    listProjects({ limit: 100 })
+      .then((res) => setProjects(res.items))
+      .catch(() => setProjects([]));
+  }, []);
+
   async function handleStatusChange(id: string, status: string) {
     await updateSiteVisit(id, { status: status as SiteVisitStatus });
     load();
   }
 
+  function openCreate() {
+    setForm(emptyForm);
+    setFormError('');
+    setFieldErrors({});
+    setModalOpen(true);
+  }
+
   async function handleCreate() {
-    if (!visitDate) {
-      setFormError('Visit date is required');
+    const result = validateForm(siteVisitFormSchema, form);
+    if (!result.success) {
+      setFieldErrors(result.fieldErrors);
+      setFormError(firstFieldError(result.fieldErrors) ?? '');
       return;
     }
+
     setSaving(true);
     setFormError('');
+    setFieldErrors({});
     try {
-      await createSiteVisit({ visitDate, meetingPoint });
+      await createSiteVisit(result.data);
       setModalOpen(false);
-      setVisitDate('');
-      setMeetingPoint('');
+      setForm(emptyForm);
       load();
     } catch (err) {
       setFormError(getErrorMessage(err));
@@ -84,7 +107,7 @@ export function SiteVisitsPage() {
         title="Site Visits"
         description="Schedule and track site visits."
         actions={
-          <Button onClick={() => setModalOpen(true)}>
+          <Button onClick={openCreate}>
             <Plus className="h-4 w-4" /> Schedule Visit
           </Button>
         }
@@ -93,11 +116,30 @@ export function SiteVisitsPage() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Schedule Site Visit">
         <div className="space-y-4">
-          {formError && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
-          <Input label="Visit Date" type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} />
-          <Input label="Meeting Point" value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} />
-          <Button className="w-full" loading={saving} onClick={handleCreate}>
-            Schedule
+          <ApiErrorBanner message={formError} />
+          <Select
+            label="Project"
+            options={projects.map((p) => ({ label: p.projectName, value: p._id }))}
+            placeholder="Select project"
+            value={form.project}
+            error={fieldErrors.project}
+            onChange={(e) => { setForm({ ...form, project: e.target.value }); setFieldErrors((f) => ({ ...f, project: '' })); }}
+          />
+          <Input
+            label="Visit Date"
+            type="date"
+            value={form.visitDate}
+            error={fieldErrors.visitDate}
+            onChange={(e) => { setForm({ ...form, visitDate: e.target.value }); setFieldErrors((f) => ({ ...f, visitDate: '' })); }}
+          />
+          <Input
+            label="Meeting Point"
+            value={form.meetingPoint}
+            error={fieldErrors.meetingPoint}
+            onChange={(e) => setForm({ ...form, meetingPoint: e.target.value })}
+          />
+          <Button className="w-full" loading={saving} disabled={saving} onClick={handleCreate}>
+            {saving ? 'Scheduling...' : 'Schedule'}
           </Button>
         </div>
       </Modal>

@@ -19,6 +19,8 @@ import investmentRoutes from '../modules/investments/investment.route';
 import milestoneRoutes from '../modules/milestones/milestone.route';
 import budgetRoutes from '../modules/budget/budget.route';
 import progressDashboardRoutes from '../modules/progressDashboard/progressDashboard.route';
+import vacancyRoutes from '../modules/careers/vacancy.route';
+import jobApplicationRoutes from '../modules/jobApplications/jobApplication.route';
 
 const router = Router();
 
@@ -42,5 +44,7 @@ router.use('/investments', investmentRoutes);
 router.use('/milestones', milestoneRoutes);
 router.use('/budget', budgetRoutes);
 router.use('/progress-dashboard', progressDashboardRoutes);
+router.use('/vacancies', vacancyRoutes);
+router.use('/job-applications', jobApplicationRoutes);
 
 export default router;

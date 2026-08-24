@@ -11,6 +11,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Textarea } from '../../components/Textarea';
+import { ApiErrorBanner } from '../../components/ApiErrorBanner';
 import {
   listApprovals,
   createApproval,
@@ -24,6 +25,8 @@ import { listProjects } from '../../services/projectService';
 import { listDocuments } from '../../services/documentService';
 import { getErrorMessage } from '../../services/api';
 import { Approval, ApprovalType, ApprovalStatus, Project } from '../../types';
+import { approvalFormSchema } from '../../validation/approval';
+import { validateForm, firstFieldError } from '../../validation/validateForm';
 
 const typeOptions = Object.values(ApprovalType).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
 const statusOptions = Object.values(ApprovalStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
@@ -88,6 +91,7 @@ export function AdminApprovalsPage() {
   const [form, setForm] = useState<ApprovalFormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [deleteTarget, setDeleteTarget] = useState<Approval | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -138,6 +142,7 @@ export function AdminApprovalsPage() {
     setEditingId(null);
     setForm(emptyForm);
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -159,16 +164,21 @@ export function AdminApprovalsPage() {
       remarks: approval.remarks ?? '',
     });
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
   async function handleSave() {
-    if (!form.project) return setFormError('Project is required');
-    if (!form.approvalName.trim()) return setFormError('Approval name is required');
-    if (!form.approvalType) return setFormError('Approval type is required');
+    const result = validateForm(approvalFormSchema, form);
+    if (!result.success) {
+      setFieldErrors(result.fieldErrors);
+      setFormError(firstFieldError(result.fieldErrors) ?? '');
+      return;
+    }
 
     setSaving(true);
     setFormError('');
+    setFieldErrors({});
     const payload = {
       ...form,
       approvalType: form.approvalType as ApprovalType,
@@ -290,7 +300,7 @@ export function AdminApprovalsPage() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Edit Approval' : 'New Approval'} size="lg">
         <div className="space-y-4">
-          {formError && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <ApiErrorBanner message={formError} />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Select
@@ -299,22 +309,29 @@ export function AdminApprovalsPage() {
               placeholder="Select project"
               value={form.project}
               disabled={!!editingId}
-              onChange={(e) => setForm({ ...form, project: e.target.value, document: undefined })}
+              error={fieldErrors.project}
+              onChange={(e) => { setForm({ ...form, project: e.target.value, document: undefined }); setFieldErrors((f) => ({ ...f, project: '' })); }}
             />
             <Select
               label="Approval Type"
               options={typeOptions}
               placeholder="Select type"
               value={form.approvalType}
-              onChange={(e) => setForm({ ...form, approvalType: e.target.value as ApprovalType })}
+              error={fieldErrors.approvalType}
+              onChange={(e) => { setForm({ ...form, approvalType: e.target.value as ApprovalType }); setFieldErrors((f) => ({ ...f, approvalType: '' })); }}
             />
           </div>
 
-          <Input label="Approval Name" value={form.approvalName} onChange={(e) => setForm({ ...form, approvalName: e.target.value })} />
+          <Input
+            label="Approval Name"
+            value={form.approvalName}
+            error={fieldErrors.approvalName}
+            onChange={(e) => { setForm({ ...form, approvalName: e.target.value }); setFieldErrors((f) => ({ ...f, approvalName: '' })); }}
+          />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input label="Authority / Department" value={form.authority ?? ''} onChange={(e) => setForm({ ...form, authority: e.target.value })} />
-            <Input label="Application / Reference Number" value={form.referenceNumber ?? ''} onChange={(e) => setForm({ ...form, referenceNumber: e.target.value })} />
+            <Input label="Authority / Department" value={form.authority ?? ''} error={fieldErrors.authority} onChange={(e) => setForm({ ...form, authority: e.target.value })} />
+            <Input label="Application / Reference Number" value={form.referenceNumber ?? ''} error={fieldErrors.referenceNumber} onChange={(e) => setForm({ ...form, referenceNumber: e.target.value })} />
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -371,10 +388,10 @@ export function AdminApprovalsPage() {
             onChange={(e) => setForm({ ...form, document: e.target.value || undefined })}
           />
 
-          <Textarea label="Remarks" value={form.remarks ?? ''} onChange={(e) => setForm({ ...form, remarks: e.target.value })} />
+          <Textarea label="Remarks" value={form.remarks ?? ''} error={fieldErrors.remarks} onChange={(e) => setForm({ ...form, remarks: e.target.value })} />
 
-          <Button className="w-full" loading={saving} onClick={handleSave}>
-            {editingId ? 'Save Changes' : 'Create Approval'}
+          <Button className="w-full" loading={saving} disabled={saving} onClick={handleSave}>
+            {saving ? 'Saving...' : editingId ? 'Save Changes' : 'Create Approval'}
           </Button>
         </div>
       </Modal>

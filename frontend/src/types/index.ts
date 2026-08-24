@@ -119,6 +119,10 @@ export interface Project {
   description?: string;
   status: ProjectStatus;
   images: string[];
+  /** Stored filename of the admin-uploaded thumbnail, if any. Prefer `thumbnailUrl` for display. */
+  thumbnail?: string;
+  /** Safe, ready-to-use URL for the thumbnail (server-relative). Undefined when no thumbnail has been uploaded. */
+  thumbnailUrl?: string;
   isPublic: boolean;
   createdAt: string;
   updatedAt: string;
@@ -700,6 +704,90 @@ export interface ProjectProgressDashboard {
   investments: InvestmentsSummary;
   milestones: MilestonesSummary;
   health: ProjectHealthResult;
+}
+
+export enum EmploymentType {
+  FULL_TIME = 'FULL_TIME',
+  PART_TIME = 'PART_TIME',
+  CONTRACT = 'CONTRACT',
+  INTERNSHIP = 'INTERNSHIP',
+  TEMPORARY = 'TEMPORARY',
+  OTHER = 'OTHER',
+}
+
+export enum VacancyStatus {
+  DRAFT = 'DRAFT',
+  PUBLISHED = 'PUBLISHED',
+  CLOSED = 'CLOSED',
+}
+
+export interface Vacancy {
+  _id: string;
+  title: string;
+  department: string;
+  location: string;
+  employmentType: EmploymentType;
+  openings: number;
+
+  minExperience?: number;
+  maxExperience?: number;
+  minSalary?: number;
+  maxSalary?: number;
+
+  description: string;
+  responsibilities: string[];
+  requiredSkills: string[];
+
+  applicationDeadline?: string;
+  status: VacancyStatus;
+  featured: boolean;
+  urgent: boolean;
+
+  createdBy?: { _id: string; fullName: string } | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export enum ApplicationStatus {
+  NEW = 'NEW',
+  REVIEWING = 'REVIEWING',
+  SHORTLISTED = 'SHORTLISTED',
+  INTERVIEW = 'INTERVIEW',
+  SELECTED = 'SELECTED',
+  REJECTED = 'REJECTED',
+  WITHDRAWN = 'WITHDRAWN',
+}
+
+export interface ApplicationNote {
+  _id: string;
+  note: string;
+  createdBy?: { _id: string; fullName: string } | string;
+  createdAt: string;
+}
+
+export interface JobApplication {
+  _id: string;
+  vacancy: { _id: string; title: string; department: string; location: string; status: VacancyStatus } | string;
+  fullName: string;
+  email: string;
+  phone: string;
+  city?: string;
+  experience: number;
+  currentCompany?: string;
+  currentCTC?: number;
+  expectedCTC?: number;
+  noticePeriod?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
+  coverNote?: string;
+
+  resumeOriginalName: string;
+
+  status: ApplicationStatus;
+  internalNotes: ApplicationNote[];
+
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ApiSuccessResponse<T> {

@@ -11,10 +11,13 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Textarea } from '../../components/Textarea';
+import { ApiErrorBanner } from '../../components/ApiErrorBanner';
 import { listWorkItems, createWorkItem, updateWorkItem, deleteWorkItem, listAssignees, WorkItemInput, WorkItemAssignee } from '../../services/workItemService';
 import { listProjects } from '../../services/projectService';
 import { getErrorMessage } from '../../services/api';
 import { ProjectWorkItem, WorkItemCategory, WorkItemStatus, Project } from '../../types';
+import { workItemFormSchema } from '../../validation/workItem';
+import { validateForm, firstFieldError } from '../../validation/validateForm';
 
 const categoryOptions = Object.values(WorkItemCategory).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
 const statusOptions = Object.values(WorkItemStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
@@ -71,6 +74,7 @@ export function AdminWorkItemsPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [deleteTarget, setDeleteTarget] = useState<ProjectWorkItem | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -105,6 +109,7 @@ export function AdminWorkItemsPage() {
     setEditingId(null);
     setForm(emptyForm);
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -125,16 +130,24 @@ export function AdminWorkItemsPage() {
       notes: item.notes ?? '',
     });
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
   async function handleSave() {
-    if (!form.project) return setFormError('Project is required');
-    if (!form.title.trim()) return setFormError('Title is required');
-    if (!form.category) return setFormError('Category is required');
+    const result = validateForm(workItemFormSchema, {
+      ...form,
+      progress: form.progress ?? 0,
+    });
+    if (!result.success) {
+      setFieldErrors(result.fieldErrors);
+      setFormError(firstFieldError(result.fieldErrors) ?? '');
+      return;
+    }
 
     setSaving(true);
     setFormError('');
+    setFieldErrors({});
     const payload = {
       ...form,
       category: form.category as WorkItemCategory,
@@ -256,7 +269,7 @@ export function AdminWorkItemsPage() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Edit Work Item' : 'New Work Item'} size="lg">
         <div className="space-y-4">
-          {formError && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <ApiErrorBanner message={formError} />
 
           <Select
             label="Project"
@@ -264,41 +277,51 @@ export function AdminWorkItemsPage() {
             placeholder="Select project"
             value={form.project}
             disabled={!!editingId}
-            onChange={(e) => setForm({ ...form, project: e.target.value })}
+            error={fieldErrors.project}
+            onChange={(e) => { setForm({ ...form, project: e.target.value }); setFieldErrors((f) => ({ ...f, project: '' })); }}
           />
-          <Input label="Work Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <div className="grid grid-cols-2 gap-4">
+          <Input
+            label="Work Title"
+            value={form.title}
+            error={fieldErrors.title}
+            onChange={(e) => { setForm({ ...form, title: e.target.value }); setFieldErrors((f) => ({ ...f, title: '' })); }}
+          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Select
               label="Category"
               options={categoryOptions}
               placeholder="Select category"
               value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value as WorkItemCategory })}
+              error={fieldErrors.category}
+              onChange={(e) => { setForm({ ...form, category: e.target.value as WorkItemCategory }); setFieldErrors((f) => ({ ...f, category: '' })); }}
             />
             <Select
               label="Status"
               options={statusOptions}
               value={form.status ?? WorkItemStatus.NOT_STARTED}
+              error={fieldErrors.status}
               onChange={(e) => setForm({ ...form, status: e.target.value as WorkItemStatus })}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
               label="Estimated Cost"
               type="number"
               min={0}
               value={form.estimatedCost ?? ''}
-              onChange={(e) => setForm({ ...form, estimatedCost: e.target.value ? Number(e.target.value) : undefined })}
+              error={fieldErrors.estimatedCost}
+              onChange={(e) => { setForm({ ...form, estimatedCost: e.target.value ? Number(e.target.value) : undefined }); setFieldErrors((f) => ({ ...f, estimatedCost: '' })); }}
             />
             <Input
               label="Actual Cost"
               type="number"
               min={0}
               value={form.actualCost ?? ''}
-              onChange={(e) => setForm({ ...form, actualCost: e.target.value ? Number(e.target.value) : undefined })}
+              error={fieldErrors.actualCost}
+              onChange={(e) => { setForm({ ...form, actualCost: e.target.value ? Number(e.target.value) : undefined }); setFieldErrors((f) => ({ ...f, actualCost: '' })); }}
             />
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input
               label="Start Date"
               type="date"
@@ -324,7 +347,8 @@ export function AdminWorkItemsPage() {
             min={0}
             max={100}
             value={form.progress ?? 0}
-            onChange={(e) => setForm({ ...form, progress: e.target.value ? Number(e.target.value) : 0 })}
+            error={fieldErrors.progress}
+            onChange={(e) => { setForm({ ...form, progress: e.target.value ? Number(e.target.value) : 0 }); setFieldErrors((f) => ({ ...f, progress: '' })); }}
           />
           <Select
             label="Responsible Person"
@@ -333,9 +357,9 @@ export function AdminWorkItemsPage() {
             value={form.responsiblePerson ?? ''}
             onChange={(e) => setForm({ ...form, responsiblePerson: e.target.value || undefined })}
           />
-          <Textarea label="Notes" value={form.notes ?? ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+          <Textarea label="Notes" value={form.notes ?? ''} error={fieldErrors.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
 
-          <Button className="w-full" loading={saving} onClick={handleSave}>
+          <Button className="w-full" loading={saving} disabled={saving} onClick={handleSave}>
             {editingId ? 'Save Changes' : 'Create Work Item'}
           </Button>
         </div>

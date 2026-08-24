@@ -10,6 +10,7 @@ import { Textarea } from '../../components/Textarea';
 import { Button } from '../../components/Button';
 import { Tabs } from '../../components/Tabs';
 import { StatusBadge } from '../../components/StatusBadge';
+import { ApiErrorBanner } from '../../components/ApiErrorBanner';
 import {
   getFeasibility,
   getFeasibilityByProject,
@@ -21,6 +22,8 @@ import {
 import { getProject } from '../../services/projectService';
 import { getErrorMessage } from '../../services/api';
 import { FeasibilityAssessment, FeasibilityStatus, FeasibilityRisk, RiskSeverity, SuitabilityRating, Project } from '../../types';
+import { feasibilityFormSchema, tabForField } from '../../validation/feasibility';
+import { validateForm, firstFieldError } from '../../validation/validateForm';
 
 const ratingOptions = Object.values(SuitabilityRating).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
 const severityOptions = Object.values(RiskSeverity).map((v) => ({ label: v, value: v }));
@@ -80,6 +83,7 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [saveError, setSaveError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState('land');
 
@@ -110,6 +114,7 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
 
   function set<K extends keyof FeasibilityInput>(key: K, value: FeasibilityInput[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+    setFieldErrors((f) => (f[key as string] ? { ...f, [key as string]: '' } : f));
   }
 
   function addRisk() {
@@ -120,6 +125,13 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
     const risks = [...(form.risks ?? [])];
     risks[index] = { ...risks[index], ...patch };
     set('risks', risks);
+    setFieldErrors((f) => {
+      const key = `risks.${index}.description`;
+      if (!f[key]) return f;
+      const next = { ...f };
+      delete next[key];
+      return next;
+    });
   }
 
   function removeRisk(index: number) {
@@ -127,8 +139,19 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
   }
 
   async function handleSave() {
+    const result = validateForm(feasibilityFormSchema, { ...form, risks: form.risks ?? [] });
+    if (!result.success) {
+      setFieldErrors(result.fieldErrors);
+      const message = firstFieldError(result.fieldErrors) ?? '';
+      setSaveError(message);
+      const firstPath = Object.keys(result.fieldErrors)[0];
+      if (firstPath) setTab(tabForField(firstPath));
+      return;
+    }
+
     setSaving(true);
     setSaveError('');
+    setFieldErrors({});
     try {
       if (assessment) {
         const updated = await updateFeasibility(assessment._id, form);
@@ -168,7 +191,11 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
         actions={assessment ? <StatusBadge status={assessment.status} /> : undefined}
       />
 
-      {saveError && <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{saveError}</div>}
+      {saveError && (
+        <div className="mb-4">
+          <ApiErrorBanner message={saveError} />
+        </div>
+      )}
 
       {assessment && (
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-brand-border bg-white p-4">
@@ -218,6 +245,7 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
             label="Usable Land Area"
             type="number"
             value={form.usableLandArea ?? ''}
+            error={fieldErrors.usableLandArea}
             onChange={(e) => set('usableLandArea', e.target.value ? Number(e.target.value) : undefined)}
           />
           <Input
@@ -271,18 +299,21 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
             label="Nearest Highway Distance (km)"
             type="number"
             value={form.nearestHighwayDistanceKm ?? ''}
+            error={fieldErrors.nearestHighwayDistanceKm}
             onChange={(e) => set('nearestHighwayDistanceKm', e.target.value ? Number(e.target.value) : undefined)}
           />
           <Input
             label="Nearest Railway Distance (km)"
             type="number"
             value={form.nearestRailwayDistanceKm ?? ''}
+            error={fieldErrors.nearestRailwayDistanceKm}
             onChange={(e) => set('nearestRailwayDistanceKm', e.target.value ? Number(e.target.value) : undefined)}
           />
           <Input
             label="Nearest Airport Distance (km)"
             type="number"
             value={form.nearestAirportDistanceKm ?? ''}
+            error={fieldErrors.nearestAirportDistanceKm}
             onChange={(e) => set('nearestAirportDistanceKm', e.target.value ? Number(e.target.value) : undefined)}
           />
           <div className="flex items-end">
@@ -375,6 +406,7 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
               <Input
                 label="Description"
                 value={risk.description}
+                error={fieldErrors[`risks.${i}.description`]}
                 onChange={(e) => updateRisk(i, { description: e.target.value })}
               />
               <Select
@@ -412,8 +444,8 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
       )}
 
       <div className="mt-6 flex justify-end">
-        <Button loading={saving} onClick={handleSave}>
-          {assessment ? 'Save Changes' : 'Create Feasibility Assessment'}
+        <Button loading={saving} disabled={saving} onClick={handleSave}>
+          {saving ? 'Saving...' : assessment ? 'Save Changes' : 'Create Feasibility Assessment'}
         </Button>
       </div>
     </div>

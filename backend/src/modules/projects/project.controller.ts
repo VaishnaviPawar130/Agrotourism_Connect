@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { sendSuccess } from '../../utils/apiResponse';
+import { ApiError } from '../../utils/ApiError';
 import { createProjectSchema, updateProjectSchema } from './project.validation';
 import * as projectService from './project.service';
 import { logAudit } from '../auditLogs/auditLog.service';
@@ -57,4 +58,19 @@ export const deleteProjectHandler = asyncHandler(async (req: Request, res: Respo
   await projectService.deleteProject(req.params.id);
   await logAudit({ userId: req.user!.id, action: 'PROJECT_DELETED', entity: 'Project', entityId: req.params.id });
   sendSuccess(res, null, 'Project deleted');
+});
+
+export const uploadProjectThumbnailHandler = asyncHandler(async (req: Request, res: Response) => {
+  const file = req.file as Express.Multer.File | undefined;
+  if (!file) throw ApiError.badRequest('A thumbnail image is required');
+
+  const project = await projectService.setProjectThumbnail(req.params.id, { filename: file.filename });
+  await logAudit({ userId: req.user!.id, action: 'PROJECT_THUMBNAIL_UPDATED', entity: 'Project', entityId: project.id });
+  sendSuccess(res, project, 'Thumbnail updated');
+});
+
+export const removeProjectThumbnailHandler = asyncHandler(async (req: Request, res: Response) => {
+  const project = await projectService.removeProjectThumbnail(req.params.id);
+  await logAudit({ userId: req.user!.id, action: 'PROJECT_THUMBNAIL_REMOVED', entity: 'Project', entityId: project.id });
+  sendSuccess(res, project, 'Thumbnail removed');
 });

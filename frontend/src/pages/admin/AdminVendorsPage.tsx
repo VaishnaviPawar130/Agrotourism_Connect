@@ -11,11 +11,14 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Textarea } from '../../components/Textarea';
+import { ApiErrorBanner } from '../../components/ApiErrorBanner';
 import { listVendors, createVendor, updateVendor, deleteVendor, VendorInput } from '../../services/vendorService';
 import { listProjects } from '../../services/projectService';
 import { listWorkItems } from '../../services/workItemService';
 import { getErrorMessage } from '../../services/api';
 import { Vendor, VendorCategory, VendorWorkStatus, VendorPaymentStatus, Project, ProjectWorkItem } from '../../types';
+import { vendorFormSchema } from '../../validation/vendor';
+import { validateForm, firstFieldError } from '../../validation/validateForm';
 
 const categoryOptions = Object.values(VendorCategory).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
 const workStatusOptions = Object.values(VendorWorkStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
@@ -82,6 +85,7 @@ export function AdminVendorsPage() {
   const [form, setForm] = useState<VendorFormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [deleteTarget, setDeleteTarget] = useState<Vendor | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -130,6 +134,7 @@ export function AdminVendorsPage() {
     setEditingId(null);
     setForm(emptyForm);
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -156,17 +161,21 @@ export function AdminVendorsPage() {
       notes: vendor.notes ?? '',
     });
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
   async function handleSave() {
-    if (!form.project) return setFormError('Project is required');
-    if (!form.vendorName.trim()) return setFormError('Vendor name is required');
-    if (!form.category) return setFormError('Category is required');
-    if (!form.phone.trim()) return setFormError('Phone is required');
+    const result = validateForm(vendorFormSchema, form);
+    if (!result.success) {
+      setFieldErrors(result.fieldErrors);
+      setFormError(firstFieldError(result.fieldErrors) ?? '');
+      return;
+    }
 
     setSaving(true);
     setFormError('');
+    setFieldErrors({});
     const payload = {
       ...form,
       category: form.category as VendorCategory,
@@ -296,16 +305,17 @@ export function AdminVendorsPage() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Edit Vendor' : 'New Vendor'} size="lg">
         <div className="space-y-4">
-          {formError && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <ApiErrorBanner message={formError} />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Select
               label="Project"
               options={projectOptions}
               placeholder="Select project"
               value={form.project}
               disabled={!!editingId}
-              onChange={(e) => setForm({ ...form, project: e.target.value, workItem: undefined })}
+              error={fieldErrors.project}
+              onChange={(e) => { setForm({ ...form, project: e.target.value, workItem: undefined }); setFieldErrors((f) => ({ ...f, project: '' })); }}
             />
             <Select
               label="Work Item (optional)"
@@ -317,40 +327,58 @@ export function AdminVendorsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Vendor / Contractor Name" value={form.vendorName} onChange={(e) => setForm({ ...form, vendorName: e.target.value })} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              label="Vendor / Contractor Name"
+              value={form.vendorName}
+              error={fieldErrors.vendorName}
+              onChange={(e) => { setForm({ ...form, vendorName: e.target.value }); setFieldErrors((f) => ({ ...f, vendorName: '' })); }}
+            />
             <Select
               label="Category"
               options={categoryOptions}
               placeholder="Select category"
               value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value as VendorCategory })}
+              error={fieldErrors.category}
+              onChange={(e) => { setForm({ ...form, category: e.target.value as VendorCategory }); setFieldErrors((f) => ({ ...f, category: '' })); }}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Contact Person" value={form.contactPerson ?? ''} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
-            <Input label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input label="Contact Person" value={form.contactPerson ?? ''} error={fieldErrors.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
+            <Input
+              label="Phone"
+              value={form.phone}
+              error={fieldErrors.phone}
+              onChange={(e) => { setForm({ ...form, phone: e.target.value }); setFieldErrors((f) => ({ ...f, phone: '' })); }}
+            />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Email" type="email" value={form.email ?? ''} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <Input label="Address" value={form.address ?? ''} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              label="Email"
+              type="email"
+              value={form.email ?? ''}
+              error={fieldErrors.email}
+              onChange={(e) => { setForm({ ...form, email: e.target.value }); setFieldErrors((f) => ({ ...f, email: '' })); }}
+            />
+            <Input label="Address" value={form.address ?? ''} error={fieldErrors.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </div>
 
-          <Textarea label="Assigned Work" value={form.assignedWork ?? ''} onChange={(e) => setForm({ ...form, assignedWork: e.target.value })} />
+          <Textarea label="Assigned Work" value={form.assignedWork ?? ''} error={fieldErrors.assignedWork} onChange={(e) => setForm({ ...form, assignedWork: e.target.value })} />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
               label="Quotation Amount"
               type="number"
               min={0}
               value={form.quotationAmount ?? ''}
-              onChange={(e) => setForm({ ...form, quotationAmount: e.target.value ? Number(e.target.value) : undefined })}
+              error={fieldErrors.quotationAmount}
+              onChange={(e) => { setForm({ ...form, quotationAmount: e.target.value ? Number(e.target.value) : undefined }); setFieldErrors((f) => ({ ...f, quotationAmount: '' })); }}
             />
-            <Input label="Work Order Number" value={form.workOrderNumber ?? ''} onChange={(e) => setForm({ ...form, workOrderNumber: e.target.value })} />
+            <Input label="Work Order Number" value={form.workOrderNumber ?? ''} error={fieldErrors.workOrderNumber} onChange={(e) => setForm({ ...form, workOrderNumber: e.target.value })} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
               label="Work Order Date"
               type="date"
@@ -364,7 +392,7 @@ export function AdminVendorsPage() {
               onChange={(e) => setForm({ ...form, startDate: e.target.value })}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
               label="Expected Completion Date"
               type="date"
@@ -379,7 +407,7 @@ export function AdminVendorsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Select
               label="Work Status"
               options={workStatusOptions}
@@ -394,10 +422,10 @@ export function AdminVendorsPage() {
             />
           </div>
 
-          <Textarea label="Notes" value={form.notes ?? ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+          <Textarea label="Notes" value={form.notes ?? ''} error={fieldErrors.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
 
-          <Button className="w-full" loading={saving} onClick={handleSave}>
-            {editingId ? 'Save Changes' : 'Create Vendor'}
+          <Button className="w-full" loading={saving} disabled={saving} onClick={handleSave}>
+            {saving ? 'Saving...' : editingId ? 'Save Changes' : 'Create Vendor'}
           </Button>
         </div>
       </Modal>

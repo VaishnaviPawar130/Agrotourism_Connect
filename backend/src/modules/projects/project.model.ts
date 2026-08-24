@@ -16,6 +16,10 @@ export interface IProject extends Document {
   startDate?: Date;
   expectedCompletion?: Date;
   images: string[];
+  /** Stored filename of the admin-uploaded thumbnail, or undefined if none was uploaded. Never exposed as a raw filesystem path — see `thumbnailUrl`. */
+  thumbnail?: string;
+  /** Public, safe URL for the thumbnail, derived from `thumbnail`. Read-only; not persisted. */
+  readonly thumbnailUrl?: string;
   isPublic: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -37,11 +41,18 @@ const projectSchema = new Schema<IProject>(
     startDate: { type: Date },
     expectedCompletion: { type: Date },
     images: [{ type: String }],
+    thumbnail: { type: String },
     isPublic: { type: Boolean, default: false, index: true },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
 projectSchema.index({ projectName: 'text', location: 'text', description: 'text' });
+
+// Never expose the raw stored filename as a filesystem path — only ever a
+// same-origin URL served through the scoped static mount in app.ts.
+projectSchema.virtual('thumbnailUrl').get(function (this: IProject) {
+  return this.thumbnail ? `/uploads/projects/${this.thumbnail}` : undefined;
+});
 
 export const Project = model<IProject>('Project', projectSchema);

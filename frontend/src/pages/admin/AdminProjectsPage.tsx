@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, Pencil, X } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { FilterBar } from '../../components/FilterBar';
 import { DataTable, Column } from '../../components/DataTable';
@@ -10,11 +10,69 @@ import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
-import { listProjects, createProject } from '../../services/projectService';
+import { ApiErrorBanner } from '../../components/ApiErrorBanner';
+import {
+  listProjects,
+  createProject,
+  updateProject,
+  uploadProjectThumbnail,
+  removeProjectThumbnail,
+  resolveProjectThumbnailUrl,
+} from '../../services/projectService';
 import { getErrorMessage } from '../../services/api';
 import { Project, ProjectType } from '../../types';
+import { projectFormSchema, validateThumbnailFile } from '../../validation/project';
+import { validateForm, firstFieldError } from '../../validation/validateForm';
+import { noProjectThumbnail } from '../../assets/images';
 
 const typeOptions = Object.values(ProjectType).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
+
+const emptyForm = { projectName: '', location: '', projectType: ProjectType.AGRO_TOURISM, isPublic: false };
+
+function ThumbnailField({
+  previewUrl,
+  onFileSelected,
+  onRemoveExisting,
+  error,
+}: {
+  previewUrl: string | null;
+  onFileSelected: (file: File | null) => void;
+  onRemoveExisting?: () => void;
+  error?: string;
+}) {
+  return (
+    <div>
+      <label className="text-sm font-medium text-brand-charcoal">Thumbnail Image</label>
+      <div className="mt-1.5 flex items-start gap-4">
+        <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-md border border-brand-border bg-brand-cream">
+          <img src={previewUrl ?? noProjectThumbnail} alt="Thumbnail preview" className="h-full w-full object-cover" />
+          {previewUrl && onRemoveExisting && (
+            <button
+              type="button"
+              onClick={onRemoveExisting}
+              aria-label="Remove thumbnail"
+              className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+        <div className="flex-1">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => onFileSelected(e.target.files?.[0] ?? null)}
+            className={`block w-full rounded-md border px-3 py-2.5 text-sm text-brand-charcoal file:mr-3 file:rounded-md file:border-0 file:bg-brand-cream file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-forest ${
+              error ? 'border-red-400' : 'border-brand-border'
+            }`}
+          />
+          <p className="mt-1 text-xs text-brand-slate">JPG, PNG or WEBP. Max 5MB.</p>
+          {error && <span className="mt-1 block text-xs text-red-600">{error}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -23,10 +81,17 @@ export function AdminProjectsPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({ projectName: '', location: '', projectType: ProjectType.AGRO_TOURISM, isPublic: false });
+  const [form, setForm] = useState(emptyForm);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailError, setThumbnailError] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [removeExistingThumbnail, setRemoveExistingThumbnail] = useState(false);
 
   function load() {
     setLoading(true);
@@ -45,13 +110,76 @@ export function AdminProjectsPage() {
 
   useEffect(load, [search, page]);
 
-  async function handleCreate() {
+  function openCreateModal() {
+    setEditingProject(null);
+    setForm(emptyForm);
+    setThumbnailFile(null);
+    setThumbnailError('');
+    setRemoveExistingThumbnail(false);
+    setError('');
+    setFieldErrors({});
+    setModalOpen(true);
+  }
+
+  function openEditModal(project: Project) {
+    setEditingProject(project);
+    setForm({
+      projectName: project.projectName,
+      location: project.location,
+      projectType: project.projectType,
+      isPublic: project.isPublic,
+    });
+    setThumbnailFile(null);
+    setThumbnailError('');
+    setRemoveExistingThumbnail(false);
+    setError('');
+    setFieldErrors({});
+    setModalOpen(true);
+  }
+
+  function handleThumbnailSelected(file: File | null) {
+    const message = validateThumbnailFile(file);
+    setThumbnailError(message ?? '');
+    setThumbnailFile(message ? null : file);
+    if (file) setRemoveExistingThumbnail(false);
+  }
+
+  async function handleSave() {
+    const result = validateForm(projectFormSchema, form);
+    if (!result.success) {
+      setFieldErrors(result.fieldErrors);
+      setError(firstFieldError(result.fieldErrors) ?? '');
+      return;
+    }
+    const thumbMessage = validateThumbnailFile(thumbnailFile);
+    if (thumbMessage) {
+      setThumbnailError(thumbMessage);
+      return;
+    }
+
     setSaving(true);
     setError('');
+    setFieldErrors({});
     try {
-      await createProject(form);
+      let projectId: string;
+      if (editingProject) {
+        const updated = await updateProject(editingProject._id, result.data);
+        projectId = updated._id;
+      } else {
+        const created = await createProject(result.data);
+        projectId = created._id;
+      }
+
+      if (thumbnailFile) {
+        await uploadProjectThumbnail(projectId, thumbnailFile);
+      } else if (editingProject && removeExistingThumbnail) {
+        await removeProjectThumbnail(projectId);
+      }
+
       setModalOpen(false);
-      setForm({ projectName: '', location: '', projectType: ProjectType.AGRO_TOURISM, isPublic: false });
+      setEditingProject(null);
+      setForm(emptyForm);
+      setThumbnailFile(null);
       load();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -61,6 +189,16 @@ export function AdminProjectsPage() {
   }
 
   const columns: Column<Project>[] = [
+    {
+      header: 'Thumbnail',
+      accessor: (p) => (
+        <img
+          src={p.images?.[0] || resolveProjectThumbnailUrl(p) || noProjectThumbnail}
+          alt={p.projectName}
+          className="h-10 w-14 rounded object-cover"
+        />
+      ),
+    },
     { header: 'Project', accessor: (p) => p.projectName },
     { header: 'Code', accessor: (p) => p.projectCode },
     { header: 'Location', accessor: (p) => p.location },
@@ -75,7 +213,35 @@ export function AdminProjectsPage() {
         </Link>
       ),
     },
+    {
+      header: '',
+      accessor: (p) => (
+        <button
+          type="button"
+          onClick={() => openEditModal(p)}
+          aria-label={`Edit ${p.projectName}`}
+          className="inline-flex items-center gap-1 text-sm font-medium text-brand-forest hover:underline"
+        >
+          <Pencil className="h-3.5 w-3.5" /> Edit
+        </button>
+      ),
+    },
   ];
+
+  // Only re-derive (and revoke the previous) object URL when the selected file
+  // actually changes — creating one on every render would leak memory.
+  const selectedFileObjectUrl = useMemo(() => (thumbnailFile ? URL.createObjectURL(thumbnailFile) : null), [thumbnailFile]);
+  useEffect(() => {
+    return () => {
+      if (selectedFileObjectUrl) URL.revokeObjectURL(selectedFileObjectUrl);
+    };
+  }, [selectedFileObjectUrl]);
+
+  const activeThumbnailPreview =
+    selectedFileObjectUrl ??
+    (editingProject && !removeExistingThumbnail
+      ? editingProject.images?.[0] || resolveProjectThumbnailUrl(editingProject) || null
+      : null);
 
   return (
     <div>
@@ -83,7 +249,7 @@ export function AdminProjectsPage() {
         title="Projects"
         description="Manage projects converted from land submissions."
         actions={
-          <Button onClick={() => setModalOpen(true)}>
+          <Button onClick={openCreateModal}>
             <Plus className="h-4 w-4" /> New Project
           </Button>
         }
@@ -92,23 +258,47 @@ export function AdminProjectsPage() {
       <DataTable columns={columns} rows={projects} loading={loading} error={listError} keyExtractor={(p) => p._id} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="New Project">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingProject ? 'Edit Project' : 'New Project'}>
         <div className="space-y-4">
-          {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-          <Input label="Project Name" value={form.projectName} onChange={(e) => setForm({ ...form, projectName: e.target.value })} />
-          <Input label="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+          <ApiErrorBanner message={error} />
+          <Input
+            label="Project Name"
+            value={form.projectName}
+            error={fieldErrors.projectName}
+            onChange={(e) => { setForm({ ...form, projectName: e.target.value }); setFieldErrors((f) => ({ ...f, projectName: '' })); }}
+          />
+          <Input
+            label="Location"
+            value={form.location}
+            error={fieldErrors.location}
+            onChange={(e) => { setForm({ ...form, location: e.target.value }); setFieldErrors((f) => ({ ...f, location: '' })); }}
+          />
           <Select
             label="Project Type"
             options={typeOptions}
             value={form.projectType}
+            error={fieldErrors.projectType}
             onChange={(e) => setForm({ ...form, projectType: e.target.value as ProjectType })}
+          />
+          <ThumbnailField
+            previewUrl={activeThumbnailPreview}
+            onFileSelected={handleThumbnailSelected}
+            error={thumbnailError}
+            onRemoveExisting={
+              editingProject && activeThumbnailPreview
+                ? () => {
+                    setThumbnailFile(null);
+                    setRemoveExistingThumbnail(true);
+                  }
+                : undefined
+            }
           />
           <label className="flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" checked={form.isPublic} onChange={(e) => setForm({ ...form, isPublic: e.target.checked })} />
             Publish publicly
           </label>
-          <Button className="w-full" loading={saving} onClick={handleCreate}>
-            Create Project
+          <Button className="w-full" loading={saving} disabled={saving} onClick={handleSave}>
+            {saving ? 'Saving...' : editingProject ? 'Save Changes' : 'Create Project'}
           </Button>
         </div>
       </Modal>

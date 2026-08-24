@@ -1,9 +1,29 @@
+import fs from 'fs/promises';
+import path from 'path';
 import { FilterQuery } from 'mongoose';
 import { Project, IProject } from './project.model';
 import { CreateProjectInput, UpdateProjectInput } from './project.validation';
 import { ApiError } from '../../utils/ApiError';
 import { escapeRegex } from '../../utils/escapeRegex';
 import { generateProjectCode } from '../../utils/generateCode';
+import { projectThumbnailUploadRootDir } from './projectThumbnailUpload';
+
+/** Best-effort delete of a thumbnail file from disk; a missing file is not an error. */
+async function deleteThumbnailFile(relativePath: string) {
+  const root = path.resolve(projectThumbnailUploadRootDir);
+  const absolutePath = path.resolve(root, relativePath);
+  // Defence in depth: never touch a path that escapes the thumbnail directory,
+  // even if a crafted value somehow reached the database.
+  if (absolutePath !== root && !absolutePath.startsWith(root + path.sep)) return;
+
+  try {
+    await fs.unlink(absolutePath);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      console.error('[projects] Failed to remove thumbnail from disk:', relativePath, err);
+    }
+  }
+}
 
 function slugify(text: string) {
   return text
@@ -79,4 +99,31 @@ export async function updateProject(id: string, input: UpdateProjectInput) {
 export async function deleteProject(id: string) {
   const project = await Project.findByIdAndDelete(id);
   if (!project) throw ApiError.notFound('Project not found');
+  if (project.thumbnail) await deleteThumbnailFile(project.thumbnail);
+}
+
+/** Replaces the project's thumbnail, deleting the previous file from disk (if any). */
+export async function setProjectThumbnail(id: string, file: { filename: string }) {
+  const project = await Project.findById(id);
+  if (!project) throw ApiError.notFound('Project not found');
+
+  const previous = project.thumbnail;
+  project.thumbnail = file.filename;
+  await project.save();
+
+  if (previous) await deleteThumbnailFile(previous);
+  return project;
+}
+
+/** Clears the project's thumbnail and deletes the file from disk. */
+export async function removeProjectThumbnail(id: string) {
+  const project = await Project.findById(id);
+  if (!project) throw ApiError.notFound('Project not found');
+
+  const previous = project.thumbnail;
+  project.thumbnail = undefined;
+  await project.save();
+
+  if (previous) await deleteThumbnailFile(previous);
+  return project;
 }

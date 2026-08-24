@@ -11,6 +11,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Textarea } from '../../components/Textarea';
+import { ApiErrorBanner } from '../../components/ApiErrorBanner';
 import {
   listMilestones,
   createMilestone,
@@ -24,6 +25,8 @@ import { listProjects } from '../../services/projectService';
 import { listWorkItems } from '../../services/workItemService';
 import { getErrorMessage } from '../../services/api';
 import { Milestone, MilestoneCategory, MilestoneStatus, Project, ProjectWorkItem } from '../../types';
+import { milestoneFormSchema } from '../../validation/milestone';
+import { validateForm, firstFieldError } from '../../validation/validateForm';
 
 const categoryOptions = Object.values(MilestoneCategory).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
 const statusOptions = Object.values(MilestoneStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
@@ -88,6 +91,7 @@ export function AdminMilestonesPage() {
   const [form, setForm] = useState<MilestoneFormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [deleteTarget, setDeleteTarget] = useState<Milestone | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -139,6 +143,7 @@ export function AdminMilestonesPage() {
     setEditingId(null);
     setForm(emptyForm);
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
@@ -158,16 +163,21 @@ export function AdminMilestonesPage() {
       notes: m.notes ?? '',
     });
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   }
 
   async function handleSave() {
-    if (!form.project) return setFormError('Project is required');
-    if (!form.title.trim()) return setFormError('Milestone title is required');
-    if (!form.category) return setFormError('Category is required');
+    const result = validateForm(milestoneFormSchema, { ...form, progress: form.progress ?? 0 });
+    if (!result.success) {
+      setFieldErrors(result.fieldErrors);
+      setFormError(firstFieldError(result.fieldErrors) ?? '');
+      return;
+    }
 
     setSaving(true);
     setFormError('');
+    setFieldErrors({});
     const payload = {
       ...form,
       category: form.category as MilestoneCategory,
@@ -308,30 +318,37 @@ export function AdminMilestonesPage() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Edit Milestone' : 'New Milestone'} size="lg">
         <div className="space-y-4">
-          {formError && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</div>}
+          <ApiErrorBanner message={formError} />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Select
               label="Project"
               options={projectOptions}
               placeholder="Select project"
               value={form.project}
               disabled={!!editingId}
-              onChange={(e) => setForm({ ...form, project: e.target.value, workItem: undefined })}
+              error={fieldErrors.project}
+              onChange={(e) => { setForm({ ...form, project: e.target.value, workItem: undefined }); setFieldErrors((f) => ({ ...f, project: '' })); }}
             />
             <Select
               label="Category"
               options={categoryOptions}
               placeholder="Select category"
               value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value as MilestoneCategory })}
+              error={fieldErrors.category}
+              onChange={(e) => { setForm({ ...form, category: e.target.value as MilestoneCategory }); setFieldErrors((f) => ({ ...f, category: '' })); }}
             />
           </div>
 
-          <Input label="Milestone Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <Textarea label="Description" value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <Input
+            label="Milestone Title"
+            value={form.title}
+            error={fieldErrors.title}
+            onChange={(e) => { setForm({ ...form, title: e.target.value }); setFieldErrors((f) => ({ ...f, title: '' })); }}
+          />
+          <Textarea label="Description" value={form.description ?? ''} error={fieldErrors.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
               label="Target Date"
               type="date"
@@ -346,14 +363,15 @@ export function AdminMilestonesPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
               label="Progress %"
               type="number"
               min={0}
               max={100}
               value={form.progress ?? 0}
-              onChange={(e) => setForm({ ...form, progress: e.target.value ? Number(e.target.value) : 0 })}
+              error={fieldErrors.progress}
+              onChange={(e) => { setForm({ ...form, progress: e.target.value ? Number(e.target.value) : 0 }); setFieldErrors((f) => ({ ...f, progress: '' })); }}
             />
             <Select
               label="Status"
@@ -363,7 +381,7 @@ export function AdminMilestonesPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Select
               label="Responsible Person"
               options={assigneeOptions}
@@ -381,10 +399,10 @@ export function AdminMilestonesPage() {
             />
           </div>
 
-          <Textarea label="Notes" value={form.notes ?? ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+          <Textarea label="Notes" value={form.notes ?? ''} error={fieldErrors.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
 
-          <Button className="w-full" loading={saving} onClick={handleSave}>
-            {editingId ? 'Save Changes' : 'Create Milestone'}
+          <Button className="w-full" loading={saving} disabled={saving} onClick={handleSave}>
+            {saving ? 'Saving...' : editingId ? 'Save Changes' : 'Create Milestone'}
           </Button>
         </div>
       </Modal>

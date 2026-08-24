@@ -54,6 +54,7 @@ const navGroups = [
   },
 ];
 
+const careersLink = { label: 'Careers', to: '/careers' };
 const contactLink = { label: 'Contact', to: '/contact' };
 
 function NavDropdown({ label, items }: { label: string; items: { label: string; to: string; icon: typeof Sprout }[] }) {
@@ -115,6 +116,9 @@ export function PublicLayout() {
   const [mobileGroupOpen, setMobileGroupOpen] = useState<string | null>(null);
   const user = useAuthStore((s) => s.user);
   const openAuthModal = useAuthModalStore((s) => s.openModal);
+  // Homepage nav matches the original reference design, which predates the Careers
+  // link — every other public page still shows it.
+  const isHome = useLocation().pathname === '/';
 
   useEffect(() => {
     function onScroll() {
@@ -157,6 +161,16 @@ export function PublicLayout() {
             {navGroups.map((group) => (
               <NavDropdown key={group.label} label={group.label} items={group.items} />
             ))}
+            {!isHome && (
+              <NavLink
+                to={careersLink.to}
+                className={({ isActive }) =>
+                  `relative rounded-md px-1 py-1 text-[14.5px] font-medium transition-colors after:absolute after:-bottom-[3px] after:left-0 after:h-[1.5px] after:rounded-full after:bg-[#C79A50] after:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-forest focus-visible:ring-offset-1 ${isActive ? 'text-brand-forest after:w-full' : 'text-brand-slate after:w-0 hover:text-brand-forest hover:after:w-full'}`
+                }
+              >
+                {careersLink.label}
+              </NavLink>
+            )}
             <NavLink
               to={contactLink.to}
               className={({ isActive }) =>
@@ -249,6 +263,17 @@ export function PublicLayout() {
               ))}
 
               <div className="border-t border-brand-border pt-1">
+                {!isHome && (
+                  <NavLink
+                    to={careersLink.to}
+                    onClick={() => setOpen(false)}
+                    className={({ isActive }) =>
+                      `block rounded-md px-2 py-2.5 text-sm font-medium ${isActive ? 'bg-brand-cream text-brand-forest' : 'text-brand-charcoal'}`
+                    }
+                  >
+                    {careersLink.label}
+                  </NavLink>
+                )}
                 <NavLink
                   to={contactLink.to}
                   onClick={() => setOpen(false)}

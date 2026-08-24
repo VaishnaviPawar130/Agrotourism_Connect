@@ -66,6 +66,11 @@ const colorMap: Record<string, string> = {
   ON_TRACK: 'bg-green-100 text-green-700',
   ATTENTION_REQUIRED: 'bg-amber-100 text-amber-700',
   AT_RISK: 'bg-red-100 text-red-700',
+  PUBLISHED: 'bg-green-100 text-green-700',
+  REVIEWING: 'bg-amber-100 text-amber-700',
+  SHORTLISTED: 'bg-indigo-100 text-indigo-700',
+  INTERVIEW: 'bg-purple-100 text-purple-700',
+  SELECTED: 'bg-brand-forest/10 text-brand-forest',
 };
 
 export function StatusBadge({ status }: { status: string }) {

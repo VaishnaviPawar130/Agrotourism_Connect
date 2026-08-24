@@ -18,6 +18,8 @@ import { ServicesPage } from './pages/public/ServicesPage';
 import { GalleryPage } from './pages/public/GalleryPage';
 import { KnowledgeCenterPage } from './pages/public/KnowledgeCenterPage';
 import { ContactPage } from './pages/public/ContactPage';
+import { CareersPage } from './pages/public/CareersPage';
+import { CareerDetailPage } from './pages/public/CareerDetailPage';
 
 import { AuthModalRoute } from './pages/auth/AuthModalRoute';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
@@ -42,11 +44,14 @@ import { AdminInvestmentsPage } from './pages/admin/AdminInvestmentsPage';
 import { AdminMilestonesPage } from './pages/admin/AdminMilestonesPage';
 import { AdminBudgetPage } from './pages/admin/AdminBudgetPage';
 import { AdminProgressDashboardPage } from './pages/admin/AdminProgressDashboardPage';
+import { AdminVacanciesPage } from './pages/admin/AdminVacanciesPage';
+import { AdminJobApplicationsPage } from './pages/admin/AdminJobApplicationsPage';
 
 import { MyInterestsPage } from './pages/investor/MyInterestsPage';
 import { InvestorProfilePage } from './pages/investor/InvestorProfilePage';
 
 const STAFF_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PROJECT_MANAGER];
+const CAREERS_ADMIN_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN];
 
 export default function App() {
   // Hold rendering until a persisted token has been validated, so a protected
@@ -79,6 +84,8 @@ export default function App() {
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/knowledge-center" element={<KnowledgeCenterPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/careers" element={<CareersPage />} />
+        <Route path="/careers/:id" element={<CareerDetailPage />} />
       </Route>
 
       <Route path="/login" element={<AuthModalRoute mode="login" />} />
@@ -109,6 +116,11 @@ export default function App() {
             <Route path="/dashboard/milestones" element={<AdminMilestonesPage />} />
             <Route path="/dashboard/budget" element={<AdminBudgetPage />} />
             <Route path="/dashboard/progress" element={<AdminProgressDashboardPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={CAREERS_ADMIN_ROLES} />}>
+            <Route path="/dashboard/careers" element={<AdminVacanciesPage />} />
+            <Route path="/dashboard/job-applications" element={<AdminJobApplicationsPage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={[UserRole.INVESTOR]} />}>

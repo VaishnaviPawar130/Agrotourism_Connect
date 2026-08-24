@@ -9,9 +9,12 @@ import { Modal } from '../../components/Modal';
 import { Textarea } from '../../components/Textarea';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
+import { ApiErrorBanner } from '../../components/ApiErrorBanner';
 import { listLeads, updateLead, createFollowUp, listFollowUpsForLead } from '../../services/leadService';
 import { getErrorMessage } from '../../services/api';
 import { Lead, LeadStatus } from '../../types';
+import { followUpFormSchema } from '../../validation/followUp';
+import { validateForm, firstFieldError } from '../../validation/validateForm';
 
 const statusOptions = Object.values(LeadStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
 
@@ -36,6 +39,7 @@ export function LeadsPage() {
   const [commType, setCommType] = useState('Call');
   const [saving, setSaving] = useState(false);
   const [followUpError, setFollowUpError] = useState('');
+  const [followUpFieldErrors, setFollowUpFieldErrors] = useState<Record<string, string>>({});
 
   function load() {
     setLoading(true);
@@ -63,6 +67,7 @@ export function LeadsPage() {
     setActiveLead(lead);
     setFollowUps([]);
     setFollowUpError('');
+    setFollowUpFieldErrors({});
     listFollowUpsForLead(lead._id)
       .then(setFollowUps)
       .catch((err) => setFollowUpError(getErrorMessage(err)));
@@ -70,14 +75,18 @@ export function LeadsPage() {
 
   async function handleAddFollowUp() {
     if (!activeLead) return;
-    if (!commType.trim()) {
-      setFollowUpError('Communication type is required');
+    const result = validateForm(followUpFormSchema, { communicationType: commType, notes: note });
+    if (!result.success) {
+      setFollowUpFieldErrors(result.fieldErrors);
+      setFollowUpError(firstFieldError(result.fieldErrors) ?? '');
       return;
     }
+
     setSaving(true);
     setFollowUpError('');
+    setFollowUpFieldErrors({});
     try {
-      await createFollowUp({ lead: activeLead._id, communicationType: commType.trim(), notes: note.trim() });
+      await createFollowUp({ lead: activeLead._id, communicationType: result.data.communicationType, notes: result.data.notes });
       setNote('');
       const updated = await listFollowUpsForLead(activeLead._id);
       setFollowUps(updated);
@@ -127,13 +136,20 @@ export function LeadsPage() {
             ))}
           </div>
           {followUpError && (
-            <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{followUpError}</div>
+            <div className="mt-3">
+              <ApiErrorBanner message={followUpError} />
+            </div>
           )}
           <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
-            <Input label="Communication Type" value={commType} onChange={(e) => setCommType(e.target.value)} />
-            <Textarea label="Notes" value={note} onChange={(e) => setNote(e.target.value)} />
-            <Button loading={saving} onClick={handleAddFollowUp} className="w-full">
-              Add Follow-up
+            <Input
+              label="Communication Type"
+              value={commType}
+              error={followUpFieldErrors.communicationType}
+              onChange={(e) => { setCommType(e.target.value); setFollowUpFieldErrors((f) => ({ ...f, communicationType: '' })); }}
+            />
+            <Textarea label="Notes" value={note} error={followUpFieldErrors.notes} onChange={(e) => setNote(e.target.value)} />
+            <Button loading={saving} disabled={saving} onClick={handleAddFollowUp} className="w-full">
+              {saving ? 'Adding...' : 'Add Follow-up'}
             </Button>
           </div>
         </div>

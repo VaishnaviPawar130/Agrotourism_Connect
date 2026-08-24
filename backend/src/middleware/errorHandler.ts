@@ -54,16 +54,22 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   if (err instanceof MulterError) {
     const message =
       err.code === 'LIMIT_FILE_SIZE'
-        ? 'File is too large. Maximum allowed size is 20MB.'
+        ? 'File is too large.'
         : err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE'
           ? 'Too many files, or an unexpected file field was sent.'
           : 'File upload failed.';
     return sendError(res, message, 400);
   }
 
-  // Our own fileFilter rejection, which multer surfaces as a plain Error.
-  if (err instanceof Error && err.message === 'Unsupported file type') {
-    return sendError(res, 'Unsupported file type. Allowed: JPG, PNG, WEBP, GIF, PDF, DOC, DOCX, MP4.', 400);
+  // Our own fileFilter rejections (upload.ts, resumeUpload.ts, projectThumbnailUpload.ts),
+  // which multer surfaces as a plain Error rather than a MulterError.
+  if (
+    err instanceof Error &&
+    (err.message === 'Unsupported file type' ||
+      err.message === 'Resume must be a PDF or Word document' ||
+      err.message === 'Thumbnail must be a JPG, PNG or WEBP image')
+  ) {
+    return sendError(res, err.message, 400);
   }
 
   // Anything else is genuinely unexpected: log it, but tell the client nothing.

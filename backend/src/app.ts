@@ -6,6 +6,7 @@ import { env } from './config/env';
 import apiRouter from './routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { uploadRootDir } from './middleware/upload';
+import { projectThumbnailUploadRootDir } from './modules/projects/projectThumbnailUpload';
 import { securityHeaders } from './middleware/securityHeaders';
 
 const app = express();
@@ -38,6 +39,11 @@ app.use('/api/v1', apiRouter);
 // Static file serving for uploaded documents is deliberately NOT mounted here —
 // visibility rules are enforced in the documents module route instead.
 void path.resolve(uploadRootDir);
+
+// Project thumbnails are meant to be publicly visible on project cards, so
+// (unlike documents) this directory is served directly and unauthenticated.
+// It is scoped to only the thumbnails subfolder, never the general upload root.
+app.use('/uploads/projects', express.static(projectThumbnailUploadRootDir));
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -22,6 +22,8 @@ import {
   Flag,
   IndianRupee,
   Gauge,
+  Briefcase,
+  ClipboardList,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { UserRole } from '../types';
@@ -39,6 +41,8 @@ const adminNav = [
   { label: 'Investments', to: '/dashboard/investments', icon: Wallet },
   { label: 'Milestones', to: '/dashboard/milestones', icon: Flag },
   { label: 'Budget vs Actual', to: '/dashboard/budget', icon: IndianRupee },
+  { label: 'Careers', to: '/dashboard/careers', icon: Briefcase, roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN] },
+  { label: 'Job Applications', to: '/dashboard/job-applications', icon: ClipboardList, roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN] },
   { label: 'Investors', to: '/dashboard/investors', icon: Landmark },
   { label: 'Leads', to: '/dashboard/leads', icon: Handshake },
   { label: 'Site Visits', to: '/dashboard/site-visits', icon: CalendarCheck },
@@ -58,7 +62,11 @@ const investorNav = [
 ];
 
 function getNavForRole(role?: UserRole) {
-  if (role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN || role === UserRole.PROJECT_MANAGER) return adminNav;
+  if (role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN || role === UserRole.PROJECT_MANAGER) {
+    // Individual entries may further restrict themselves via `roles` (e.g.
+    // Careers is Admin/Super Admin only, even though PMs see the rest of adminNav).
+    return adminNav.filter((item) => !('roles' in item) || item.roles?.includes(role));
+  }
   if (role === UserRole.INVESTOR) return investorNav;
   return landownerNav;
 }

@@ -1,15 +1,18 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Leaf, X } from 'lucide-react';
 import { Input } from './Input';
 import { Select } from './Select';
 import { Button } from './Button';
-import { login, LoginPayload, register as registerUser, RegisterPayload, forgotPassword } from '../services/authService';
+import { ApiErrorBanner } from './ApiErrorBanner';
+import { login, register as registerUser, forgotPassword } from '../services/authService';
 import { getErrorMessage } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { useAuthModalStore } from '../store/authModalStore';
 import { UserRole } from '../types';
+import { loginSchema, LoginFormValues, registerSchema, RegisterFormValues, forgotPasswordSchema, ForgotPasswordFormValues } from '../validation/auth';
 
 const roleOptions = [
   { label: 'Landowner', value: UserRole.LANDOWNER },
@@ -50,14 +53,14 @@ function LoginForm() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginPayload>();
+  } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
   const [error, setError] = useState('');
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
   const close = useAuthModalStore((s) => s.close);
   const setMode = useAuthModalStore((s) => s.setMode);
 
-  async function onSubmit(data: LoginPayload) {
+  async function onSubmit(data: LoginFormValues) {
     setError('');
     try {
       const { user, token } = await login(data);
@@ -73,10 +76,14 @@ function LoginForm() {
     <>
       <LogoHeader />
       <h1 className="mt-5 text-center text-lg font-semibold text-brand-charcoal">Login</h1>
-      {error && <div className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
-        <Input label="Email" type="email" autoFocus {...register('email', { required: 'Email is required' })} error={errors.email?.message} />
-        <PasswordInput label="Password" {...register('password', { required: 'Password is required' })} error={errors.password?.message} />
+      {error && (
+        <div className="mt-4">
+          <ApiErrorBanner message={error} />
+        </div>
+      )}
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
+        <Input label="Email" type="email" autoFocus {...register('email')} error={errors.email?.message} />
+        <PasswordInput label="Password" {...register('password')} error={errors.password?.message} />
         <div className="text-right">
           <button type="button" onClick={() => setMode('forgot-password')} className="text-xs text-brand-forest hover:underline">
             Forgot password?
@@ -101,14 +108,14 @@ function RegisterForm() {
     register: registerField,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<RegisterPayload>();
+  } = useForm<RegisterFormValues>({ resolver: zodResolver(registerSchema) });
   const [error, setError] = useState('');
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
   const close = useAuthModalStore((s) => s.close);
   const setMode = useAuthModalStore((s) => s.setMode);
 
-  async function onSubmit(data: RegisterPayload) {
+  async function onSubmit(data: RegisterFormValues) {
     setError('');
     try {
       const { user, token } = await registerUser(data);
@@ -125,22 +132,26 @@ function RegisterForm() {
       <div className="shrink-0">
         <LogoHeader />
         <h1 className="mt-3 text-center text-lg font-semibold text-brand-charcoal">Create an Account</h1>
-        {error && <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+        {error && (
+          <div className="mt-3">
+            <ApiErrorBanner message={error} />
+          </div>
+        )}
       </div>
-      <form id="auth-register-form" onSubmit={handleSubmit(onSubmit)} className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-0.5">
+      <form id="auth-register-form" onSubmit={handleSubmit(onSubmit)} className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-0.5" noValidate>
         <Input
           label="Full Name"
           autoFocus
           className="py-2.5"
-          {...registerField('fullName', { required: 'Full name is required' })}
+          {...registerField('fullName')}
           error={errors.fullName?.message}
         />
-        <Input label="Email" type="email" className="py-2.5" {...registerField('email', { required: 'Email is required' })} error={errors.email?.message} />
-        <Input label="Mobile" className="py-2.5" {...registerField('mobile', { required: 'Mobile is required' })} error={errors.mobile?.message} />
+        <Input label="Email" type="email" className="py-2.5" {...registerField('email')} error={errors.email?.message} />
+        <Input label="Mobile" className="py-2.5" {...registerField('mobile')} error={errors.mobile?.message} />
         <PasswordInput
           label="Password"
           className="py-2.5"
-          {...registerField('password', { required: 'Password is required', minLength: { value: 6, message: 'Minimum 6 characters' } })}
+          {...registerField('password')}
           error={errors.password?.message}
         />
         <Select
@@ -148,7 +159,7 @@ function RegisterForm() {
           options={roleOptions}
           placeholder="Select role"
           className="py-2.5"
-          {...registerField('role', { required: 'Please select a role' })}
+          {...registerField('role')}
           error={errors.role?.message}
         />
         <div className="grid grid-cols-2 gap-3">
@@ -176,12 +187,12 @@ function ForgotPasswordForm() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<{ email: string }>();
+  } = useForm<ForgotPasswordFormValues>({ resolver: zodResolver(forgotPasswordSchema) });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const setMode = useAuthModalStore((s) => s.setMode);
 
-  async function onSubmit(data: { email: string }) {
+  async function onSubmit(data: ForgotPasswordFormValues) {
     setError('');
     try {
       await forgotPassword(data.email);
@@ -196,9 +207,13 @@ function ForgotPasswordForm() {
       <LogoHeader />
       <h1 className="mt-5 text-center text-lg font-semibold text-brand-charcoal">Forgot Password</h1>
       {message && <div className="mt-4 rounded-md bg-brand-cream px-3 py-2 text-sm text-brand-forest">{message}</div>}
-      {error && <div className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
-        <Input label="Email" type="email" autoFocus {...register('email', { required: 'Email is required' })} error={errors.email?.message} />
+      {error && (
+        <div className="mt-4">
+          <ApiErrorBanner message={error} />
+        </div>
+      )}
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
+        <Input label="Email" type="email" autoFocus {...register('email')} error={errors.email?.message} />
         <Button type="submit" loading={isSubmitting} className="w-full">
           Send Reset Link
         </Button>

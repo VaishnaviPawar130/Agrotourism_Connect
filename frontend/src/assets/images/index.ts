@@ -58,5 +58,22 @@ export const galleryImages: { src: string; alt: string; category: string }[] = [
   { src: damView, alt: 'Dam view landscape', category: 'Projects' },
 ];
 
-/** Fallback project imagery, rotated for cards without an uploaded image. */
-export const projectFallbackImages = [aerialResort, premiumCottages, tourismMasterplan];
+/**
+ * Neutral placeholder shown on a project card/gallery when no admin-uploaded
+ * thumbnail exists yet. Deliberately a plain graphic, not a stock photo — a
+ * project with no thumbnail should visibly need one, not silently borrow
+ * unrelated project imagery.
+ */
+export const noProjectThumbnail =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+      <rect width="640" height="360" fill="#F3F1EA"/>
+      <g fill="none" stroke="#C9C2AE" stroke-width="2.5">
+        <rect x="220" y="130" width="200" height="140" rx="8"/>
+        <circle cx="270" cy="170" r="14"/>
+        <path d="M220 250l50-50 40 35 40-45 70 60" />
+      </g>
+      <text x="320" y="310" font-family="sans-serif" font-size="15" fill="#8A8370" text-anchor="middle">No thumbnail uploaded</text>
+    </svg>`
+  );

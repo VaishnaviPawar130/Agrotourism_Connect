@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Leaf } from 'lucide-react';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
+import { ApiErrorBanner } from '../../components/ApiErrorBanner';
 import { resetPassword } from '../../services/authService';
 import { getErrorMessage } from '../../services/api';
 import { images } from '../../assets/images';
+import { resetPasswordSchema, ResetPasswordFormValues } from '../../validation/auth';
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -15,11 +18,11 @@ export function ResetPasswordPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<{ newPassword: string }>();
+  } = useForm<ResetPasswordFormValues>({ resolver: zodResolver(resetPasswordSchema) });
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  async function onSubmit(data: { newPassword: string }) {
+  async function onSubmit(data: ResetPasswordFormValues) {
     setError('');
     try {
       await resetPassword(token, data.newPassword);
@@ -44,13 +47,17 @@ export function ResetPasswordPage() {
             Agrotourism Connect
           </Link>
           <h1 className="text-center text-lg font-semibold text-brand-charcoal">Reset Password</h1>
-          {error && <div className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+          {error && (
+            <div className="mt-4">
+              <ApiErrorBanner message={error} />
+            </div>
+          )}
           {!token && <div className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">No reset token found in URL.</div>}
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
             <Input
               label="New Password"
               type="password"
-              {...register('newPassword', { required: 'New password is required', minLength: { value: 6, message: 'Minimum 6 characters' } })}
+              {...register('newPassword')}
               error={errors.newPassword?.message}
             />
             <Button type="submit" loading={isSubmitting} className="w-full" disabled={!token}>
