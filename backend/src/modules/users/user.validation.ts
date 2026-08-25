@@ -11,6 +11,26 @@ export const createUserSchema = z.object({
   state: z.string().optional(),
 });
 
+/**
+ * Roles that may ever be created through the internal staff-management
+ * endpoints. SUPER_ADMIN is deliberately excluded — a Super Admin account is
+ * only ever provisioned via the `seed` script, never through the API, so
+ * there is no HTTP-reachable path that can mint one.
+ */
+export const STAFF_CREATABLE_ROLES = [UserRole.ADMIN, UserRole.PROJECT_MANAGER] as const;
+
+export const createStaffSchema = z.object({
+  fullName: z.string().trim().min(2).max(120),
+  email: z.string().trim().email(),
+  mobile: z
+    .string()
+    .trim()
+    .regex(/^[+]?[0-9\s-]{7,15}$/, 'Enter a valid mobile number'),
+  role: z.enum(STAFF_CREATABLE_ROLES),
+});
+
+export type CreateStaffInput = z.infer<typeof createStaffSchema>;
+
 export const updateUserSchema = z.object({
   fullName: z.string().trim().min(2).max(120).optional(),
   mobile: z

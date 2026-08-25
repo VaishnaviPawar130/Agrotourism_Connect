@@ -7,6 +7,7 @@ import { ApiError } from '../../utils/ApiError';
 import { escapeRegex } from '../../utils/escapeRegex';
 import { generateProjectCode } from '../../utils/generateCode';
 import { projectThumbnailUploadRootDir } from './projectThumbnailUpload';
+import { FeasibilityAssessment } from '../feasibility/feasibility.model';
 
 /** Best-effort delete of a thumbnail file from disk; a missing file is not an error. */
 async function deleteThumbnailFile(relativePath: string) {
@@ -100,6 +101,7 @@ export async function deleteProject(id: string) {
   const project = await Project.findByIdAndDelete(id);
   if (!project) throw ApiError.notFound('Project not found');
   if (project.thumbnail) await deleteThumbnailFile(project.thumbnail);
+  await FeasibilityAssessment.deleteMany({ project: id });
 }
 
 /** Replaces the project's thumbnail, deleting the previous file from disk (if any). */

@@ -53,6 +53,7 @@ export async function listDocuments(
 
   const [items, total] = await Promise.all([
     DocumentRecord.find(filter)
+      .populate('project', 'projectName')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit),
