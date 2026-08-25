@@ -258,6 +258,7 @@ export function AdminVendorsPage() {
       <PageHeader
         title="Vendors & Contractors"
         description="Manage vendors and contractors engaged for project development work."
+        backTo="/dashboard"
         actions={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" /> New Vendor
@@ -300,10 +301,19 @@ export function AdminVendorsPage() {
         error={error}
         keyExtractor={(v) => v._id}
         emptyLabel="No vendors yet — add one to start tracking contractor engagements."
+        showSerial
+        page={page}
+        pageSize={20}
       />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Edit Vendor' : 'New Vendor'} size="lg">
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingId ? 'Edit Vendor' : 'New Vendor'}
+        size="lg"
+        showBack
+      >
         <div className="space-y-4">
           <ApiErrorBanner message={formError} />
 

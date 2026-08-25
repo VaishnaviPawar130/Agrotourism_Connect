@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, MapPin, Phone, Send, Lock, Handshake, ArrowRight, Leaf } from 'lucide-react';
+import { Mail, MapPin, Phone, Send, Lock, Handshake, ArrowRight } from 'lucide-react';
 import { Input } from '../../components/Input';
 import { Textarea } from '../../components/Textarea';
 import { Button } from '../../components/Button';
 import { ApiErrorBanner } from '../../components/ApiErrorBanner';
+import { PageBanner } from '../../components/PageBanner';
 import { submitEnquiry } from '../../services/enquiryService';
 import { getErrorMessage } from '../../services/api';
 import { images } from '../../assets/images';
@@ -36,34 +37,13 @@ export function ContactPage() {
   }
 
   return (
-    <div className="bg-brand-cream/40">
-      {/* Hero */}
-      <section className="relative h-[180px] overflow-hidden sm:h-[210px]">
-        <img
-          src={images.damView}
-          alt="Scenic agrotourism landscape"
-          className="absolute inset-0 h-full w-full object-cover"
-          loading="eager"
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(90deg, rgba(15,40,30,0.92) 0%, rgba(15,40,30,0.75) 30%, rgba(15,40,30,0.4) 58%, rgba(15,40,30,0.1) 100%)',
-          }}
-        />
-        <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-center px-4 sm:px-6">
-          <span className="inline-flex w-fit items-center gap-2 text-xs font-semibold uppercase tracking-wide text-brand-goldSoft">
-            <Handshake className="h-3.5 w-3.5" />
-            We're Here to Help
-          </span>
-          <h1 className="mt-1.5 font-serif text-2xl font-semibold leading-tight text-white sm:text-3xl">Contact Us</h1>
-          <span className="mt-1.5 h-1 w-14 rounded-full bg-brand-gold" />
-          <p className="mt-1.5 max-w-md text-xs leading-snug text-white/85 sm:text-sm">
-            Have a question about land, investment or partnership? Our team is ready to assist you.
-          </p>
-        </div>
-      </section>
+    <div className="bg-brand-offwhite">
+      <PageBanner
+        title="Contact Us"
+        description="Have a question about land, investment or partnership? Our team is ready to assist you."
+        image={images.landscapedGazebo}
+        imagePosition="65% 35%"
+      />
 
       {/* Main content */}
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
@@ -78,7 +58,7 @@ export function ContactPage() {
               Whether you're a landowner, investor, or tourism operator, we'd love to hear from you.
             </p>
 
-            <div className="mt-4 divide-y divide-brand-border rounded-2xl border border-brand-border bg-white">
+            <div className="mt-4 divide-y divide-brand-border/70 rounded-2xl border border-brand-border/70 bg-white shadow-sm">
               <ContactRow icon={MapPin} label="Our Location" value="India" />
               <ContactRow icon={Mail} label="Email Us" value="info@agrotourismconnect.com" />
               <ContactRow icon={Phone} label="Call Us" value="+91 00000 00000" />
@@ -86,7 +66,7 @@ export function ContactPage() {
           </div>
 
           {/* Form card */}
-          <div className="rounded-2xl border border-brand-border bg-white p-5 shadow-[0_2px_14px_rgba(32,56,47,0.07)] sm:p-6">
+          <div className="rounded-2xl border border-brand-border/70 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex items-center gap-3">
               <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-forest-100 text-brand-forest">
                 <Mail className="h-4.5 w-4.5" />
@@ -159,7 +139,11 @@ export function ContactPage() {
               />
 
               <div className="flex flex-wrap items-center gap-4">
-                <Button type="submit" loading={isSubmitting} className="h-11 gap-2 rounded-lg px-6">
+                <Button
+                  type="submit"
+                  loading={isSubmitting}
+                  className="h-11 gap-2 rounded-lg bg-brand-gold px-6 hover:bg-brand-gold/90 focus-visible:ring-brand-gold"
+                >
                   <Send className="h-4 w-4" />
                   Send Message
                 </Button>
@@ -173,27 +157,28 @@ export function ContactPage() {
         </div>
 
         {/* Partner CTA */}
-        <div className="relative mt-10 flex flex-col items-start justify-between gap-5 overflow-hidden rounded-2xl border border-brand-forest/15 bg-brand-cream/70 p-6 sm:flex-row sm:items-center sm:p-8">
-          <Leaf className="pointer-events-none absolute -right-4 -top-4 h-24 w-24 text-brand-forest/5" />
-          <Leaf className="pointer-events-none absolute -bottom-6 left-1/3 h-20 w-20 text-brand-forest/5" />
-          <div className="relative flex items-start gap-4">
-            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-brand-forest shadow-sm">
-              <Handshake className="h-5 w-5" />
-            </span>
+        <div className="relative mt-10 overflow-hidden rounded-2xl border border-brand-border/70 bg-brand-cream/60 shadow-sm">
+          <Handshake
+            className="pointer-events-none absolute -left-4 top-1/2 h-24 w-24 -translate-y-1/2 text-brand-forest/[0.07] sm:h-32 sm:w-32"
+            strokeWidth={1}
+          />
+          <div className="relative flex flex-col items-center gap-5 px-6 py-7 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:px-10 sm:py-8 sm:text-left">
             <div>
-              <h2 className="font-serif text-xl font-semibold text-brand-forest sm:text-2xl">Looking to Partner With Us?</h2>
+              <h2 className="font-serif text-xl font-bold tracking-tight text-brand-forest sm:text-2xl">
+                Looking to Partner With Us?
+              </h2>
               <p className="mt-1.5 max-w-md text-sm text-brand-slate">
                 Join hands with Agrotourism Connect and be a part of India&rsquo;s growing agrotourism ecosystem.
               </p>
             </div>
+            <Link
+              to="/register"
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-brand-gold px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-brand-gold/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2"
+            >
+              Partner With Us
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <Link
-            to="/register"
-            className="relative inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-forest px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-forest focus-visible:ring-offset-2 sm:w-auto"
-          >
-            Partner With Us
-            <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
       </div>
     </div>

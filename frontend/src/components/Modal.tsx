@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 
 export function Modal({
   open,
@@ -7,12 +7,15 @@ export function Modal({
   title,
   children,
   size = 'md',
+  showBack,
 }: {
   open: boolean;
   onClose: () => void;
   title?: string;
   children: ReactNode;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  /** When true, shows a compact icon-only back arrow beside the title that closes the dialog and returns to the parent list — the modal-based equivalent of a routed page's Back button. */
+  showBack?: boolean;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -47,7 +50,7 @@ export function Modal({
   }, [open]);
 
   if (!open) return null;
-  const widthClass = size === 'sm' ? 'max-w-md' : size === 'lg' ? 'max-w-3xl' : 'max-w-xl';
+  const widthClass = size === 'sm' ? 'max-w-md' : size === 'lg' ? 'max-w-3xl' : size === 'xl' ? 'max-w-[960px]' : 'max-w-xl';
 
   return (
     <div
@@ -66,7 +69,19 @@ export function Modal({
         className={`my-auto flex w-full ${widthClass} max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl bg-white shadow-xl focus:outline-none`}
       >
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-brand-border px-5 py-3">
-          <h2 className="text-base font-semibold text-brand-charcoal">{title}</h2>
+          <div className="flex items-center gap-3">
+            {showBack && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Back"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-brand-border text-brand-charcoal transition-colors hover:bg-brand-cream hover:text-brand-forest"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
+            <h2 className="text-base font-semibold text-brand-charcoal">{title}</h2>
+          </div>
           <button
             type="button"
             onClick={onClose}

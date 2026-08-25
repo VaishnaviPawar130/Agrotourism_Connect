@@ -60,8 +60,19 @@ function LoginForm() {
   const close = useAuthModalStore((s) => s.close);
   const setMode = useAuthModalStore((s) => s.setMode);
 
+  const logout = useAuthStore((s) => s.logout);
+
   async function onSubmit(data: LoginFormValues) {
     setError('');
+    // Defence in depth: if a different account's session (e.g. a Super Admin
+    // testing a new staff invite) is still active in this browser, clear it
+    // completely before attempting the new login. `setAuth` below already
+    // replaces `user`/`token` atomically, so this is not required for
+    // correctness — but it removes any window, however small, in which
+    // stale role-gated UI (already-mounted admin-only routes/components)
+    // could reflect the previous account between the old session ending and
+    // the new one being confirmed.
+    logout();
     try {
       const { user, token } = await login(data);
       setAuth(user, token);

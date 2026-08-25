@@ -42,9 +42,9 @@ export function EnquiriesPage() {
 
   return (
     <div>
-      <PageHeader title="Website Enquiries" description="Enquiries submitted via the public contact form." />
+      <PageHeader title="Website Enquiries" description="Enquiries submitted via the public contact form." backTo="/dashboard" />
       <FilterBar search={search} onSearchChange={setSearch} searchPlaceholder="Search enquiries..." />
-      <DataTable columns={columns} rows={enquiries} loading={loading} error={error} keyExtractor={(e) => e._id} />
+      <DataTable columns={columns} rows={enquiries} loading={loading} error={error} keyExtractor={(e) => e._id} showSerial />
     </div>
   );
 }

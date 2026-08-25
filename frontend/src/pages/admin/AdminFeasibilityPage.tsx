@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { FilterBar } from '../../components/FilterBar';
 import { DataTable, Column } from '../../components/DataTable';
 import { Pagination } from '../../components/Pagination';
 import { StatusBadge } from '../../components/StatusBadge';
+import { FeasibilityViewModal } from '../../components/FeasibilityViewModal';
 import { listFeasibilities } from '../../services/feasibilityService';
 import { getErrorMessage } from '../../services/api';
-import { FeasibilityAssessment, FeasibilityStatus, Project } from '../../types';
+import { useAuthStore } from '../../store/authStore';
+import { FeasibilityAssessment, FeasibilityStatus, Project, UserRole } from '../../types';
+
+const STAFF_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PROJECT_MANAGER];
 
 const statusOptions = [
   { label: 'All Statuses', value: '' },
@@ -25,6 +30,10 @@ function projectLocation(assessment: FeasibilityAssessment) {
 }
 
 export function AdminFeasibilityPage() {
+  const navigate = useNavigate();
+  const currentUser = useAuthStore((s) => s.user);
+  const canEdit = !!currentUser && STAFF_ROLES.includes(currentUser.role);
+
   const [items, setItems] = useState<FeasibilityAssessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -32,6 +41,7 @@ export function AdminFeasibilityPage() {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [viewing, setViewing] = useState<FeasibilityAssessment | null>(null);
 
   function load() {
     setLoading(true);
@@ -58,20 +68,43 @@ export function AdminFeasibilityPage() {
     {
       header: 'Project',
       accessor: (a) => (
-        <Link to={`/dashboard/feasibility/${a._id}`} className="font-medium text-brand-forest hover:underline">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setViewing(a);
+          }}
+          className="font-medium text-brand-forest hover:underline"
+        >
           {projectName(a)}
-        </Link>
+        </button>
       ),
     },
     { header: 'Location', accessor: (a) => projectLocation(a) },
     { header: 'Land Suitability', accessor: (a) => <StatusBadge status={a.landSuitability} /> },
     { header: 'Development Suitability', accessor: (a) => <StatusBadge status={a.developmentSuitability} /> },
     { header: 'Status', accessor: (a) => <StatusBadge status={a.status} /> },
+    {
+      header: 'Action',
+      accessor: (a) => (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setViewing(a);
+          }}
+          className="inline-flex items-center gap-1 font-medium text-brand-forest hover:underline"
+        >
+          View Details <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+      ),
+      className: 'text-right',
+    },
   ];
 
   return (
     <div>
-      <PageHeader title="Feasibility Assessments" description="Land suitability, connectivity and tourism-potential reviews per project." />
+      <PageHeader title="Feasibility Assessments" description="Land suitability, connectivity and tourism-potential reviews per project." backTo="/dashboard" />
       <FilterBar search={search} onSearchChange={setSearch} searchPlaceholder="Search by project name...">
         <select
           value={status}
@@ -90,8 +123,20 @@ export function AdminFeasibilityPage() {
         error={error}
         keyExtractor={(a) => a._id}
         emptyLabel="No feasibility assessments yet — create one from a project's detail page."
+        onRowClick={(a) => setViewing(a)}
+        showSerial
+        page={page}
+        pageSize={20}
       />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+
+      <FeasibilityViewModal
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        assessment={viewing}
+        canEdit={canEdit}
+        onEdit={viewing ? () => navigate(`/dashboard/feasibility/${viewing._id}`) : undefined}
+      />
     </div>
   );
 }

@@ -49,13 +49,13 @@ export function UsersPage() {
     {
       header: 'Status',
       accessor: (u) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 whitespace-nowrap">
           <StatusBadge status={u.status} />
           <Select
             options={statusOptions}
             value={u.status}
             onChange={(e) => handleStatusChange(u._id, e.target.value)}
-            className="py-1 text-xs"
+            className="w-[190px] py-1 text-xs"
           />
         </div>
       ),
@@ -64,9 +64,9 @@ export function UsersPage() {
 
   return (
     <div>
-      <PageHeader title="Users" description="Manage all platform users." />
+      <PageHeader title="Users" description="Manage customer accounts — landowners and investors." backTo="/dashboard" />
       <FilterBar search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} searchPlaceholder="Search users..." />
-      <DataTable columns={columns} rows={users} loading={loading} error={error} keyExtractor={(u) => u._id} />
+      <DataTable columns={columns} rows={users} loading={loading} error={error} keyExtractor={(u) => u._id} showSerial page={page} pageSize={20} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Plus, Trash2 } from 'lucide-react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Plus, Trash2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { LoadingState } from '../../components/LoadingState';
 import { ErrorState } from '../../components/ErrorState';
@@ -8,9 +8,10 @@ import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Textarea } from '../../components/Textarea';
 import { Button } from '../../components/Button';
-import { Tabs } from '../../components/Tabs';
 import { StatusBadge } from '../../components/StatusBadge';
 import { ApiErrorBanner } from '../../components/ApiErrorBanner';
+import { Toast } from '../../components/Toast';
+import { FeasibilityViewModal } from '../../components/FeasibilityViewModal';
 import {
   getFeasibility,
   getFeasibilityByProject,
@@ -21,13 +22,23 @@ import {
 } from '../../services/feasibilityService';
 import { getProject } from '../../services/projectService';
 import { getErrorMessage } from '../../services/api';
-import { FeasibilityAssessment, FeasibilityStatus, FeasibilityRisk, RiskSeverity, SuitabilityRating, Project } from '../../types';
+import { useAuthStore } from '../../store/authStore';
+import { FeasibilityAssessment, FeasibilityStatus, FeasibilityRisk, RiskSeverity, SuitabilityRating, Project, UserRole } from '../../types';
 import { feasibilityFormSchema, tabForField } from '../../validation/feasibility';
 import { validateForm, firstFieldError } from '../../validation/validateForm';
 
 const ratingOptions = Object.values(SuitabilityRating).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
 const severityOptions = Object.values(RiskSeverity).map((v) => ({ label: v, value: v }));
 const statusOptions = Object.values(FeasibilityStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
+const STAFF_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PROJECT_MANAGER];
+
+const STEPS = [
+  { value: 'land', label: 'Land Suitability' },
+  { value: 'access', label: 'Accessibility & Connectivity' },
+  { value: 'utilities', label: 'Utilities & Infrastructure' },
+  { value: 'tourism', label: 'Tourism Potential' },
+  { value: 'risks', label: 'Risks & Recommendations' },
+] as const;
 
 const emptyForm: FeasibilityInput = {
   landSuitability: SuitabilityRating.NOT_ASSESSED,
@@ -77,6 +88,18 @@ function toFormInput(a: FeasibilityAssessment): FeasibilityInput {
 export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project' }) {
   const params = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const currentUser = useAuthStore((s) => s.user);
+  const canEdit = !!currentUser && STAFF_ROLES.includes(currentUser.role);
+
+  // A "Save & Continue" on a brand-new assessment swaps the URL from the
+  // project-scoped creation route to the assessment-scoped edit route, which
+  // remounts this page under a different <Route>. This state is carried
+  // through navigation so the just-completed step, toast, and target tab
+  // survive that remount instead of silently resetting.
+  type NavState = { toastMessage?: string; completedTab?: string; nextTab?: string; openCompletion?: boolean };
+  const navState = (location.state as NavState | null) ?? null;
+
   const [assessment, setAssessment] = useState<FeasibilityAssessment | null>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [form, setForm] = useState<FeasibilityInput>(emptyForm);
@@ -85,7 +108,21 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
   const [saveError, setSaveError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState('land');
+  const [tab, setTab] = useState(navState?.nextTab ?? 'land');
+  const [completedTabs, setCompletedTabs] = useState<Set<string>>(new Set(navState?.completedTab ? [navState.completedTab] : []));
+  const [toastMessage, setToastMessage] = useState<string | null>(navState?.toastMessage ?? null);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+
+  useEffect(() => {
+    if (navState?.openCompletion) {
+      const timer = setTimeout(() => setShowCompletionModal(true), 900);
+      return () => clearTimeout(timer);
+    }
+    // Only ever meant to run once, against the state this page mounted with.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const stepIndex = STEPS.findIndex((s) => s.value === tab);
 
   useEffect(() => {
     setLoading(true);
@@ -138,7 +175,9 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
     set('risks', (form.risks ?? []).filter((_, i) => i !== index));
   }
 
-  async function handleSave() {
+  const isFinalStep = stepIndex === STEPS.length - 1;
+
+  async function handleSaveAndContinue() {
     const result = validateForm(feasibilityFormSchema, { ...form, risks: form.risks ?? [] });
     if (!result.success) {
       setFieldErrors(result.fieldErrors);
@@ -153,20 +192,50 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
     setSaveError('');
     setFieldErrors({});
     try {
+      let saved: FeasibilityAssessment;
+      const wasNewAssessment = !assessment;
       if (assessment) {
-        const updated = await updateFeasibility(assessment._id, form);
-        setAssessment(updated);
-        setForm(toFormInput(updated));
+        saved = await updateFeasibility(assessment._id, form);
       } else {
-        const created = await createFeasibility({ ...form, project: params.projectId! });
-        setAssessment(created);
-        navigate(`/dashboard/feasibility/${created._id}`, { replace: true });
+        saved = await createFeasibility({ ...form, project: params.projectId! });
+      }
+      setAssessment(saved);
+      setForm(toFormInput(saved));
+
+      const stepLabel = STEPS[stepIndex].label;
+      const toastText = isFinalStep ? 'Feasibility Assessment completed successfully.' : `${stepLabel} saved successfully.`;
+
+      if (wasNewAssessment) {
+        // Navigating to the assessment-scoped route remounts this page, so
+        // hand the toast/next-step through router state instead of local
+        // setState — it would otherwise be wiped by the remount.
+        navigate(`/dashboard/feasibility/${saved._id}`, {
+          replace: true,
+          state: {
+            toastMessage: toastText,
+            completedTab: tab,
+            nextTab: isFinalStep ? tab : STEPS[stepIndex + 1].value,
+            openCompletion: isFinalStep,
+          } satisfies NavState,
+        });
+      } else {
+        setCompletedTabs((prev) => new Set(prev).add(tab));
+        setToastMessage(toastText);
+        if (isFinalStep) {
+          setTimeout(() => setShowCompletionModal(true), 900);
+        } else {
+          setTimeout(() => setTab(STEPS[stepIndex + 1].value), 900);
+        }
       }
     } catch (err) {
       setSaveError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
+  }
+
+  function goToPreviousTab() {
+    if (stepIndex > 0) setTab(STEPS[stepIndex - 1].value);
   }
 
   async function handleStatusChange(status: FeasibilityStatus) {
@@ -185,10 +254,13 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
 
   return (
     <div className="min-w-0">
+      <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
+
       <PageHeader
         title={project ? `Feasibility: ${project.projectName}` : 'Feasibility Assessment'}
         description={project?.location}
         actions={assessment ? <StatusBadge status={assessment.status} /> : undefined}
+        backTo="/dashboard/feasibility"
       />
 
       {saveError && (
@@ -215,17 +287,44 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
         </div>
       )}
 
-      <Tabs
-        active={tab}
-        onChange={setTab}
-        tabs={[
-          { label: 'Land Suitability', value: 'land' },
-          { label: 'Accessibility & Connectivity', value: 'access' },
-          { label: 'Utilities & Infrastructure', value: 'utilities' },
-          { label: 'Tourism Potential', value: 'tourism' },
-          { label: 'Risks & Recommendations', value: 'risks' },
-        ]}
-      />
+      <div className="mb-4">
+        <div className="mb-2 flex items-center justify-between text-xs text-brand-slate">
+          <span>
+            Step {stepIndex + 1} of {STEPS.length}
+          </span>
+          <span>{Math.round(((stepIndex + 1) / STEPS.length) * 100)}% complete</span>
+        </div>
+        <div className="flex gap-1 overflow-x-auto border-b border-slate-200">
+          {STEPS.map((step, i) => {
+            const isActive = tab === step.value;
+            const isDone = completedTabs.has(step.value);
+            return (
+              <button
+                key={step.value}
+                onClick={() => setTab(step.value)}
+                className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive ? 'border-b-2 border-brand-forest text-brand-forest' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {isDone ? (
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-forest text-white">
+                    <Check className="h-2.5 w-2.5" />
+                  </span>
+                ) : (
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] ${
+                      isActive ? 'border-brand-forest text-brand-forest' : 'border-slate-300 text-slate-400'
+                    }`}
+                  >
+                    {i + 1}
+                  </span>
+                )}
+                {step.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {tab === 'land' && (
         <div className="grid gap-4 rounded-lg border border-brand-border bg-white p-5 sm:grid-cols-2">
@@ -443,11 +542,30 @@ export function FeasibilityDetailPage({ mode }: { mode: 'assessment' | 'project'
         </div>
       )}
 
-      <div className="mt-6 flex justify-end">
-        <Button loading={saving} disabled={saving} onClick={handleSave}>
-          {saving ? 'Saving...' : assessment ? 'Save Changes' : 'Create Feasibility Assessment'}
+      <div className="mt-6 flex items-center justify-between">
+        <Button variant="outline" onClick={goToPreviousTab} disabled={stepIndex === 0 || saving}>
+          <ChevronLeft className="h-3.5 w-3.5" /> Previous
+        </Button>
+        <Button loading={saving} disabled={saving} onClick={handleSaveAndContinue}>
+          {saving ? (
+            'Saving...'
+          ) : isFinalStep ? (
+            'Save & Complete Assessment'
+          ) : (
+            <>
+              Save & Continue <ChevronRight className="h-3.5 w-3.5" />
+            </>
+          )}
         </Button>
       </div>
+
+      <FeasibilityViewModal
+        open={showCompletionModal}
+        onClose={() => setShowCompletionModal(false)}
+        assessment={assessment}
+        canEdit={canEdit}
+        onEdit={() => setShowCompletionModal(false)}
+      />
     </div>
   );
 }

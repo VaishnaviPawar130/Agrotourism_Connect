@@ -106,15 +106,16 @@ export function SiteVisitsPage() {
       <PageHeader
         title="Site Visits"
         description="Schedule and track site visits."
+        backTo="/dashboard"
         actions={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" /> Schedule Visit
           </Button>
         }
       />
-      <DataTable columns={columns} rows={visits} loading={loading} error={error} keyExtractor={(v) => v._id} />
+      <DataTable columns={columns} rows={visits} loading={loading} error={error} keyExtractor={(v) => v._id} showSerial />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Schedule Site Visit">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Schedule Site Visit" showBack>
         <div className="space-y-4">
           <ApiErrorBanner message={formError} />
           <Select

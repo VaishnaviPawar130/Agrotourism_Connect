@@ -42,7 +42,7 @@ export function OpportunitiesPage() {
 
   return (
     <div>
-      <PageHeader title="Investment Opportunities" description="Browse published projects and express your interest." />
+      <PageHeader title="Investment Opportunities" description="Browse published projects and express your interest." backTo="/dashboard" />
       {message && <div className="mb-4 rounded-md bg-brand-forest/10 px-4 py-3 text-sm text-brand-forest">{message}</div>}
       {loading ? (
         <LoadingState />

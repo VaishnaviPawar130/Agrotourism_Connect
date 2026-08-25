@@ -270,6 +270,7 @@ export function AdminMilestonesPage() {
       <PageHeader
         title="Project Milestones"
         description="Track key project milestones from planning through operations readiness."
+        backTo="/dashboard"
         actions={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" /> New Milestone
@@ -313,10 +314,19 @@ export function AdminMilestonesPage() {
         error={error}
         keyExtractor={(m) => m._id}
         emptyLabel="No milestones yet — create one to start tracking key project checkpoints."
+        showSerial
+        page={page}
+        pageSize={20}
       />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Edit Milestone' : 'New Milestone'} size="lg">
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingId ? 'Edit Milestone' : 'New Milestone'}
+        size="lg"
+        showBack
+      >
         <div className="space-y-4">
           <ApiErrorBanner message={formError} />
 

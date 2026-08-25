@@ -330,6 +330,7 @@ export function AdminInvestmentsPage() {
       <PageHeader
         title="Investment Management"
         description="Track investor commitments, funding progress and payments per project."
+        backTo="/dashboard"
         actions={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" /> New Investment
@@ -373,10 +374,19 @@ export function AdminInvestmentsPage() {
         error={error}
         keyExtractor={(i) => i._id}
         emptyLabel="No investments yet — create one to start tracking investor commitments."
+        showSerial
+        page={page}
+        pageSize={20}
       />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Edit Investment' : 'New Investment'} size="lg">
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingId ? 'Edit Investment' : 'New Investment'}
+        size="lg"
+        showBack
+      >
         <div className="space-y-4">
           <ApiErrorBanner message={formError} />
 
@@ -481,6 +491,7 @@ export function AdminInvestmentsPage() {
         onClose={() => setPaymentsTarget(null)}
         title={paymentsTarget ? `Payments — ${investorName(paymentsTarget)}` : 'Payments'}
         size="lg"
+        showBack
       >
         {paymentsTarget && (
           <div className="space-y-5">
@@ -502,6 +513,7 @@ export function AdminInvestmentsPage() {
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                   <thead className="bg-brand-cream">
                     <tr>
+                      <th className="w-[70px] px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Sr. No.</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Date</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Amount</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Mode</th>
@@ -510,8 +522,9 @@ export function AdminInvestmentsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {paymentsTarget.payments.map((p) => (
+                    {paymentsTarget.payments.map((p, index) => (
                       <tr key={p._id}>
+                        <td className="w-[70px] px-3 py-2 tabular-nums text-slate-500">{index + 1}</td>
                         <td className="px-3 py-2 text-slate-700">{new Date(p.paymentDate).toLocaleDateString()}</td>
                         <td className="px-3 py-2 text-slate-700">{p.amount.toLocaleString('en-IN')}</td>
                         <td className="px-3 py-2 text-slate-700">

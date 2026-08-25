@@ -49,9 +49,17 @@ export function MyLandsPage() {
           </Button>
         }
       />
-      <DataTable columns={columns} rows={lands} loading={loading} error={error} keyExtractor={(l) => l._id} emptyLabel="You haven't submitted any land yet" />
+      <DataTable
+        columns={columns}
+        rows={lands}
+        loading={loading}
+        error={error}
+        keyExtractor={(l) => l._id}
+        emptyLabel="You haven't submitted any land yet"
+        showSerial
+      />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Submit Land" size="lg">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Submit Land" size="lg" showBack>
         <LandForm
           onSuccess={() => {
             setModalOpen(false);

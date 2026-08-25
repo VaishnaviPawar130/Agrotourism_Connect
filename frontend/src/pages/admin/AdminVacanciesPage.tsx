@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Star, Zap } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { FilterBar } from '../../components/FilterBar';
 import { DataTable, Column } from '../../components/DataTable';
@@ -8,6 +8,7 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { ToggleSwitch } from '../../components/ToggleSwitch';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Textarea } from '../../components/Textarea';
@@ -224,16 +225,7 @@ export function AdminVacanciesPage() {
   }
 
   const columns: Column<Vacancy>[] = [
-    {
-      header: 'Vacancy',
-      accessor: (v) => (
-        <span className="inline-flex items-center gap-1.5 font-medium text-brand-charcoal">
-          {v.title}
-          {v.featured && <Star className="h-3.5 w-3.5 text-[#C79A50]" />}
-          {v.urgent && <Zap className="h-3.5 w-3.5 text-red-500" />}
-        </span>
-      ),
-    },
+    { header: 'Vacancy', accessor: (v) => <span className="font-medium text-brand-charcoal">{v.title}</span> },
     { header: 'Department', accessor: (v) => v.department },
     { header: 'Location', accessor: (v) => v.location },
     { header: 'Type', accessor: (v) => v.employmentType.replaceAll('_', ' ') },
@@ -241,27 +233,33 @@ export function AdminVacanciesPage() {
     { header: 'Deadline', accessor: (v) => (v.applicationDeadline ? new Date(v.applicationDeadline).toLocaleDateString() : '—') },
     { header: 'Status', accessor: (v) => <StatusBadge status={v.status} /> },
     {
+      header: 'Featured',
+      accessor: (v) => (
+        <ToggleSwitch
+          checked={v.featured}
+          onChange={() => toggleFeatured(v)}
+          accent="gold"
+          label={v.featured ? 'Unmark as featured' : 'Mark as featured'}
+          title={v.featured ? 'Featured — shown in the highlighted section on the public Careers page' : 'Mark as featured'}
+        />
+      ),
+    },
+    {
+      header: 'Urgent',
+      accessor: (v) => (
+        <ToggleSwitch
+          checked={v.urgent}
+          onChange={() => toggleUrgent(v)}
+          accent="red"
+          label={v.urgent ? 'Unmark as urgent' : 'Mark as urgent'}
+          title={v.urgent ? 'Urgent — flagged as an urgent hire on the public Careers page' : 'Mark as urgent'}
+        />
+      ),
+    },
+    {
       header: 'Actions',
       accessor: (v) => (
         <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => toggleFeatured(v)}
-            aria-label={v.featured ? 'Unmark featured' : 'Mark featured'}
-            title={v.featured ? 'Unmark featured' : 'Mark featured'}
-            className={`rounded p-1.5 hover:bg-brand-cream ${v.featured ? 'text-[#C79A50]' : 'text-brand-slate'}`}
-          >
-            <Star className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => toggleUrgent(v)}
-            aria-label={v.urgent ? 'Unmark urgent' : 'Mark urgent'}
-            title={v.urgent ? 'Unmark urgent' : 'Mark urgent'}
-            className={`rounded p-1.5 hover:bg-brand-cream ${v.urgent ? 'text-red-500' : 'text-brand-slate'}`}
-          >
-            <Zap className="h-4 w-4" />
-          </button>
           {v.status !== VacancyStatus.PUBLISHED && (
             <Button size="sm" variant="ghost" onClick={() => handleStatusChange(v, VacancyStatus.PUBLISHED)}>
               Publish
@@ -303,6 +301,7 @@ export function AdminVacanciesPage() {
       <PageHeader
         title="Careers & Vacancies"
         description="Manage job openings shown on the public Careers page."
+        backTo="/dashboard"
         actions={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" /> New Vacancy
@@ -327,10 +326,19 @@ export function AdminVacanciesPage() {
         error={error}
         keyExtractor={(v) => v._id}
         emptyLabel="No vacancies yet — create one to start publishing job openings."
+        showSerial
+        page={page}
+        pageSize={20}
       />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Edit Vacancy' : 'New Vacancy'} size="lg">
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingId ? 'Edit Vacancy' : 'New Vacancy'}
+        size="lg"
+        showBack
+      >
         <div className="space-y-4">
           <ApiErrorBanner message={formError} />
 

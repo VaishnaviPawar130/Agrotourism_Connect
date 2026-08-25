@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Pencil, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Pencil, X, ClipboardCheck } from 'lucide-react';
 import { PageHeader } from '../../components/PageHeader';
 import { FilterBar } from '../../components/FilterBar';
 import { DataTable, Column } from '../../components/DataTable';
@@ -11,6 +11,7 @@ import { Modal } from '../../components/Modal';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { ApiErrorBanner } from '../../components/ApiErrorBanner';
+import { FeasibilityViewModal } from '../../components/FeasibilityViewModal';
 import {
   listProjects,
   createProject,
@@ -19,11 +20,15 @@ import {
   removeProjectThumbnail,
   resolveProjectThumbnailUrl,
 } from '../../services/projectService';
+import { getFeasibilityByProject } from '../../services/feasibilityService';
 import { getErrorMessage } from '../../services/api';
-import { Project, ProjectType } from '../../types';
+import { useAuthStore } from '../../store/authStore';
+import { FeasibilityAssessment, Project, ProjectType, UserRole } from '../../types';
 import { projectFormSchema, validateThumbnailFile } from '../../validation/project';
 import { validateForm, firstFieldError } from '../../validation/validateForm';
 import { noProjectThumbnail } from '../../assets/images';
+
+const STAFF_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PROJECT_MANAGER];
 
 const typeOptions = Object.values(ProjectType).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
 
@@ -75,6 +80,10 @@ function ThumbnailField({
 }
 
 export function AdminProjectsPage() {
+  const navigate = useNavigate();
+  const currentUser = useAuthStore((s) => s.user);
+  const canEditFeasibility = !!currentUser && STAFF_ROLES.includes(currentUser.role);
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState('');
@@ -93,6 +102,12 @@ export function AdminProjectsPage() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [removeExistingThumbnail, setRemoveExistingThumbnail] = useState(false);
 
+  // Tracks which projects already have a feasibility assessment, so the
+  // Feasibility column can offer "View" vs "Add" instead of ambiguous text,
+  // and the view modal can render without a second round-trip.
+  const [feasibilityByProject, setFeasibilityByProject] = useState<Record<string, FeasibilityAssessment | null>>({});
+  const [viewingFeasibility, setViewingFeasibility] = useState<FeasibilityAssessment | null>(null);
+
   function load() {
     setLoading(true);
     setListError('');
@@ -100,6 +115,13 @@ export function AdminProjectsPage() {
       .then((res) => {
         setProjects(res.items);
         setTotalPages(res.totalPages);
+        Promise.all(
+          res.items.map((p) =>
+            getFeasibilityByProject(p._id)
+              .then((a) => [p._id, a] as const)
+              .catch(() => [p._id, null] as const)
+          )
+        ).then((entries) => setFeasibilityByProject(Object.fromEntries(entries)));
       })
       .catch((err) => {
         setProjects([]);
@@ -207,11 +229,25 @@ export function AdminProjectsPage() {
     { header: 'Public', accessor: (p) => (p.isPublic ? 'Yes' : 'No') },
     {
       header: 'Feasibility',
-      accessor: (p) => (
-        <Link to={`/dashboard/projects/${p._id}/feasibility`} className="text-sm font-medium text-brand-forest hover:underline">
-          Assess
-        </Link>
-      ),
+      accessor: (p) => {
+        const assessment = feasibilityByProject[p._id];
+        return assessment ? (
+          <button
+            type="button"
+            onClick={() => setViewingFeasibility(assessment)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-brand-forest px-3 py-1.5 text-sm font-medium text-brand-forest transition-colors hover:bg-brand-cream"
+          >
+            <ClipboardCheck className="h-3.5 w-3.5" /> View Assessment
+          </button>
+        ) : (
+          <Link
+            to={`/dashboard/projects/${p._id}/feasibility`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-brand-gold px-3 py-1.5 text-sm font-medium text-brand-gold transition-colors hover:bg-brand-gold/10"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add Feasibility
+          </Link>
+        );
+      },
     },
     {
       header: '',
@@ -248,6 +284,7 @@ export function AdminProjectsPage() {
       <PageHeader
         title="Projects"
         description="Manage projects converted from land submissions."
+        backTo="/dashboard"
         actions={
           <Button onClick={openCreateModal}>
             <Plus className="h-4 w-4" /> New Project
@@ -255,10 +292,15 @@ export function AdminProjectsPage() {
         }
       />
       <FilterBar search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} searchPlaceholder="Search projects..." />
-      <DataTable columns={columns} rows={projects} loading={loading} error={listError} keyExtractor={(p) => p._id} />
+      <DataTable columns={columns} rows={projects} loading={loading} error={listError} keyExtractor={(p) => p._id} showSerial page={page} pageSize={20} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingProject ? 'Edit Project' : 'New Project'}>
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingProject ? 'Edit Project' : 'New Project'}
+        showBack
+      >
         <div className="space-y-4">
           <ApiErrorBanner message={error} />
           <Input
@@ -302,6 +344,22 @@ export function AdminProjectsPage() {
           </Button>
         </div>
       </Modal>
+
+      <FeasibilityViewModal
+        open={!!viewingFeasibility}
+        onClose={() => setViewingFeasibility(null)}
+        assessment={viewingFeasibility}
+        canEdit={canEditFeasibility}
+        onEdit={
+          viewingFeasibility
+            ? () => {
+                const projectId =
+                  typeof viewingFeasibility.project === 'string' ? viewingFeasibility.project : viewingFeasibility.project._id;
+                navigate(`/dashboard/projects/${projectId}/feasibility`);
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

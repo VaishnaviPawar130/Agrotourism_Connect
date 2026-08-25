@@ -73,6 +73,7 @@ export function AdminBudgetPage() {
       <PageHeader
         title="Budget vs Actual"
         description="Estimated vs actual cost, calculated from work item and vendor records — no manual entry."
+        backTo="/dashboard"
       />
 
       <div className="mb-6 max-w-xs">

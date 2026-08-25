@@ -115,37 +115,42 @@ export function CareerDetailPage() {
 
   return (
     <div>
-      <div className="bg-brand-deep py-14 text-white sm:py-20">
+      <div className="bg-brand-cream/60 py-10 sm:py-14">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-2xl font-bold sm:text-3xl">{vacancy.title}</h1>
+            <h1 className="font-serif text-2xl font-semibold tracking-tight text-brand-charcoal sm:text-3xl">{vacancy.title}</h1>
             {vacancy.featured && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#C79A50]/25 px-2.5 py-0.5 text-xs font-semibold text-[#f0dcaa]">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#C79A50]/25 px-2.5 py-0.5 text-xs font-semibold text-[#8a6a2c]">
                 <Star className="h-3 w-3" /> Featured
               </span>
             )}
             {vacancy.urgent && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-red-500/25 px-2.5 py-0.5 text-xs font-semibold text-red-100">
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-600">
                 <Zap className="h-3 w-3" /> Urgent
               </span>
             )}
           </div>
-          <p className="mt-2 text-base text-brand-sand">{vacancy.department}</p>
 
-          <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-brand-sand">
+          <div className="mt-4 flex items-center gap-3">
+            <span className="h-px w-14 bg-brand-gold/60" />
+          </div>
+
+          <p className="mt-3 text-base text-brand-forest">{vacancy.department}</p>
+
+          <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-brand-slate">
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="h-4 w-4" /> {vacancy.location}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Users className="h-4 w-4" /> {vacancy.openings} opening{vacancy.openings !== 1 ? 's' : ''}
             </span>
-            <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium">{vacancy.employmentType.replaceAll('_', ' ')}</span>
+            <span className="rounded-full bg-brand-forest/10 px-2.5 py-0.5 text-xs font-medium text-brand-forest">{vacancy.employmentType.replaceAll('_', ' ')}</span>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-        <div className="mb-8 grid grid-cols-2 gap-4 rounded-2xl border border-brand-border bg-brand-cream/60 p-5 sm:grid-cols-3">
+        <div className="mb-8 grid grid-cols-2 gap-4 rounded-2xl border border-brand-border/70 bg-brand-cream/60 p-5 sm:grid-cols-3">
           {experienceLabel(vacancy) && (
             <div>
               <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-brand-slate">
@@ -203,7 +208,11 @@ export function CareerDetailPage() {
           </section>
         )}
 
-        <Button onClick={openApply} size="lg">
+        <Button
+          onClick={openApply}
+          size="lg"
+          className="bg-brand-gold hover:bg-brand-gold/90 focus-visible:ring-brand-gold"
+        >
           Apply for this Position
         </Button>
       </div>
@@ -308,7 +317,12 @@ export function CareerDetailPage() {
               {resumeError && <span className="mt-1 block text-xs text-red-600">{resumeError}</span>}
             </div>
 
-            <Button className="w-full" loading={submitting} disabled={submitting} onClick={handleSubmit}>
+            <Button
+              className="w-full bg-brand-gold hover:bg-brand-gold/90 focus-visible:ring-brand-gold"
+              loading={submitting}
+              disabled={submitting}
+              onClick={handleSubmit}
+            >
               {submitting ? 'Submitting...' : 'Submit Application'}
             </Button>
           </div>

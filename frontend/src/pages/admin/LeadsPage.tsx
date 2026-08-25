@@ -115,23 +115,26 @@ export function LeadsPage() {
 
   return (
     <div>
-      <PageHeader title="Leads" description="Manage CRM leads and follow-up history." />
+      <PageHeader title="Leads" description="Manage CRM leads and follow-up history." backTo="/dashboard" />
       <FilterBar search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} searchPlaceholder="Search leads..." />
-      <DataTable columns={columns} rows={leads} loading={loading} error={error} keyExtractor={(l) => l._id} />
+      <DataTable columns={columns} rows={leads} loading={loading} error={error} keyExtractor={(l) => l._id} showSerial page={page} pageSize={20} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <Modal open={!!activeLead} onClose={() => setActiveLead(null)} title={activeLead?.name} size="lg">
+      <Modal open={!!activeLead} onClose={() => setActiveLead(null)} title={activeLead?.name} size="lg" showBack>
         <div>
           <h4 className="text-sm font-semibold text-slate-800">Follow-up History</h4>
           <div className="mt-2 max-h-48 space-y-2 overflow-y-auto">
             {followUps.length === 0 && <p className="text-sm text-slate-400">No follow-ups recorded yet.</p>}
-            {followUps.map((f) => (
-              <div key={f._id} className="rounded-md bg-brand-cream p-2 text-sm">
-                <div className="flex justify-between text-xs text-slate-500">
-                  <span>{f.communicationType}</span>
-                  <span>{new Date(f.date).toLocaleString()}</span>
+            {followUps.map((f, index) => (
+              <div key={f._id} className="flex gap-2 rounded-md bg-brand-cream p-2 text-sm">
+                <span className="mt-0.5 shrink-0 text-xs font-medium text-slate-400">{index + 1}.</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>{f.communicationType}</span>
+                    <span>{new Date(f.date).toLocaleString()}</span>
+                  </div>
+                  {f.notes && <p className="mt-1 text-slate-700">{f.notes}</p>}
                 </div>
-                {f.notes && <p className="mt-1 text-slate-700">{f.notes}</p>}
               </div>
             ))}
           </div>

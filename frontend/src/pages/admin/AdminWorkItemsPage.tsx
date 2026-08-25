@@ -231,6 +231,7 @@ export function AdminWorkItemsPage() {
       <PageHeader
         title="Development Execution"
         description="Track project work items across roads, utilities, landscaping, construction and amenities."
+        backTo="/dashboard"
         actions={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" /> New Work Item
@@ -264,10 +265,19 @@ export function AdminWorkItemsPage() {
         error={error}
         keyExtractor={(i) => i._id}
         emptyLabel="No work items yet — create one to start tracking development execution."
+        showSerial
+        page={page}
+        pageSize={20}
       />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Edit Work Item' : 'New Work Item'} size="lg">
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingId ? 'Edit Work Item' : 'New Work Item'}
+        size="lg"
+        showBack
+      >
         <div className="space-y-4">
           <ApiErrorBanner message={formError} />
 

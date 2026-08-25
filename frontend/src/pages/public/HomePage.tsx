@@ -524,45 +524,51 @@ export function HomePage() {
                 </div>
               ))}
             </div>
-          </div>
-        </section>
 
-        {/* Final CTA */}
-        <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 sm:pb-20">
-          <div className="relative overflow-hidden rounded-2xl border border-brand-gold/40 text-center text-white shadow-lg">
-            <img src={images.damView} alt="Dam view landscape" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-            <div className="absolute inset-0 bg-brand-deep/80" />
-            <div className="relative mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-14">
-              <div className="flex items-center justify-center gap-3">
-                <span className="h-px w-10 bg-brand-gold/50" />
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-brand-gold/50 text-brand-gold">
-                  <Leaf className="h-3.5 w-3.5" />
-                </span>
-                <span className="h-px w-10 bg-brand-gold/50" />
-              </div>
-              <h2 className="mt-3 font-serif text-2xl font-bold tracking-tight sm:text-3xl">Ready to get started?</h2>
-              <p className="mt-2 text-sm text-brand-sand sm:text-base">
-                Reach out and our team will help you find the right path forward.
-              </p>
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-                <Link
-                  to="/contact"
-                  className="inline-flex items-center gap-2 rounded-lg bg-brand-gold px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-brand-gold/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-deep"
-                >
-                  <Phone className="h-3.5 w-3.5" />
-                  Contact Us
-                </Link>
-                <Link
-                  to="/projects"
-                  className="inline-flex items-center gap-2 rounded-lg border border-white/60 px-4 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-deep"
-                >
-                  <Compass className="h-3.5 w-3.5" />
-                  Explore Projects
-                </Link>
+            {/* Compact CTA */}
+            <div className="relative mt-14 overflow-hidden rounded-2xl border border-brand-border bg-brand-cream/60 shadow-sm">
+              <Leaf
+                className="pointer-events-none absolute -left-4 top-1/2 h-28 w-28 -translate-y-1/2 text-brand-forest/[0.07] sm:h-36 sm:w-36"
+                strokeWidth={1}
+              />
+              <img
+                src={images.damView}
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-1/3 object-cover opacity-15 [mask-image:linear-gradient(to_right,transparent,black_40%)] sm:block"
+                loading="lazy"
+              />
+              <div className="relative flex flex-col items-center gap-5 px-6 py-8 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:px-10 sm:py-9">
+                <div className="text-center sm:text-left">
+                  <h2 className="font-serif text-xl font-bold tracking-tight text-brand-forest sm:text-2xl">
+                    Ready to get started?
+                  </h2>
+                  <p className="mt-1.5 max-w-md text-sm text-brand-slate">
+                    Connect with our team to explore opportunities, list your land, or learn more about how we can
+                    grow rural prosperity together.
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center justify-center gap-3">
+                  <Link
+                    to="/contact"
+                    className="inline-flex items-center gap-2 rounded-lg bg-brand-gold px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-brand-gold/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2"
+                  >
+                    <Phone className="h-3.5 w-3.5" />
+                    Contact Us
+                  </Link>
+                  <Link
+                    to="/projects"
+                    className="inline-flex items-center gap-2 rounded-lg border border-brand-forest/30 bg-white px-4 py-2 text-sm font-semibold text-brand-forest transition-all hover:-translate-y-0.5 hover:bg-brand-forest/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-forest focus-visible:ring-offset-2"
+                  >
+                    <Compass className="h-3.5 w-3.5" />
+                    Explore Projects
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
         </section>
+
       </div>
     </div>
   );

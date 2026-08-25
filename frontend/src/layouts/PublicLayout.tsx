@@ -22,6 +22,8 @@ import {
 import { useAuthStore } from '../store/authStore';
 import { useAuthModalStore } from '../store/authModalStore';
 import { images } from '../assets/images';
+import { SOCIAL_LINKS } from '../constants/social';
+import { InstagramPreviewSection } from '../components/InstagramPreviewSection';
 
 const topLinks = [
   { label: 'Home', to: '/' },
@@ -318,6 +320,8 @@ export function PublicLayout() {
         <Outlet />
       </main>
 
+      <InstagramPreviewSection />
+
       <footer className="border-t border-white/10 bg-brand-deep text-brand-sage">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
@@ -333,9 +337,15 @@ export function PublicLayout() {
               <span className="rounded-full bg-white/5 p-2 text-brand-sage transition-colors hover:bg-white/10 hover:text-white">
                 <Facebook className="h-4 w-4" />
               </span>
-              <span className="rounded-full bg-white/5 p-2 text-brand-sage transition-colors hover:bg-white/10 hover:text-white">
+              <a
+                href={SOCIAL_LINKS.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow Agrotourism Connect on Instagram"
+                className="rounded-full bg-white/5 p-2 text-brand-sage transition-colors hover:bg-white/10 hover:text-white"
+              >
                 <Instagram className="h-4 w-4" />
-              </span>
+              </a>
               <span className="rounded-full bg-white/5 p-2 text-brand-sage transition-colors hover:bg-white/10 hover:text-white">
                 <Linkedin className="h-4 w-4" />
               </span>

@@ -9,9 +9,10 @@ import { Select } from '../../components/Select';
 import { FileUpload } from '../../components/FileUpload';
 import { ApiErrorBanner } from '../../components/ApiErrorBanner';
 import { listDocuments, uploadDocument, downloadDocument } from '../../services/documentService';
+import { listProjects } from '../../services/projectService';
 import { getErrorMessage } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import { UserRole } from '../../types';
+import { UserRole, Project } from '../../types';
 import { documentMetaFormSchema, validateDocumentFile } from '../../validation/document';
 import { validateForm, firstFieldError } from '../../validation/validateForm';
 
@@ -36,9 +37,15 @@ interface DocRow {
   visibility: string;
   originalName: string;
   createdAt: string;
+  project?: { _id: string; projectName: string } | string | null;
 }
 
 const STAFF_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PROJECT_MANAGER];
+
+function documentProjectLabel(doc: DocRow) {
+  if (!doc.project) return 'General / Unassigned';
+  return typeof doc.project === 'string' ? doc.project : doc.project.projectName;
+}
 
 export function DocumentsPage() {
   const role = useAuthStore((s) => s.user?.role);
@@ -51,6 +58,8 @@ export function DocumentsPage() {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('OTHER');
   const [visibility, setVisibility] = useState('ADMIN_ONLY');
+  const [project, setProject] = useState('');
+  const [projects, setProjects] = useState<Project[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -84,6 +93,13 @@ export function DocumentsPage() {
 
   useEffect(load, []);
 
+  useEffect(() => {
+    if (!isStaff) return;
+    listProjects({ limit: 100 })
+      .then((res) => setProjects(res.items))
+      .catch(() => setProjects([]));
+  }, [isStaff]);
+
   async function handleUpload() {
     const result = validateForm(documentMetaFormSchema, { title, category, visibility });
     const fileIssue = validateDocumentFile(file);
@@ -100,9 +116,10 @@ export function DocumentsPage() {
     setFieldErrors({});
     setFileError('');
     try {
-      await uploadDocument(file, { title, category, visibility });
+      await uploadDocument(file, { title, category, visibility, project: project || undefined });
       setModalOpen(false);
       setTitle('');
+      setProject('');
       setFile(null);
       load();
     } catch (err) {
@@ -116,6 +133,7 @@ export function DocumentsPage() {
     { header: 'Title', accessor: (d) => d.title },
     { header: 'File', accessor: (d) => d.originalName },
     { header: 'Category', accessor: (d) => d.category.replaceAll('_', ' ') },
+    { header: 'Project', accessor: (d) => documentProjectLabel(d) },
     { header: 'Visibility', accessor: (d) => d.visibility.replaceAll('_', ' ') },
     {
       header: 'Download',
@@ -134,17 +152,21 @@ export function DocumentsPage() {
     },
   ];
 
+  const projectOptions = projects.map((p) => ({ label: p.projectName, value: p._id }));
+
   return (
     <div>
       <PageHeader
         title="Documents"
         description="Securely upload and manage documents."
+        backTo="/dashboard"
         actions={
           <Button
             onClick={() => {
               setError('');
               setFieldErrors({});
               setFileError('');
+              setProject('');
               setModalOpen(true);
             }}
           >
@@ -152,9 +174,17 @@ export function DocumentsPage() {
           </Button>
         }
       />
-      <DataTable columns={columns} rows={docs} loading={loading} error={listError} keyExtractor={(d) => d._id} emptyLabel="No documents uploaded yet" />
+      <DataTable
+        columns={columns}
+        rows={docs}
+        loading={loading}
+        error={listError}
+        keyExtractor={(d) => d._id}
+        emptyLabel="No documents uploaded yet"
+        showSerial
+      />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Upload Document">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Upload Document" showBack>
         <div className="space-y-4">
           <ApiErrorBanner message={error} />
           <Input
@@ -164,11 +194,20 @@ export function DocumentsPage() {
             onChange={(e) => { setTitle(e.target.value); setFieldErrors((f) => ({ ...f, title: '' })); }}
           />
           <Select label="Category" options={categoryOptions} value={category} error={fieldErrors.category} onChange={(e) => setCategory(e.target.value)} />
-          {/* Only staff choose visibility. For a landowner/investor the server
-              forces the document to their own role's visibility, so offering the
-              control would imply a choice they do not actually have. */}
+          {/* Only staff choose visibility and link a project. For a landowner/investor
+              the server forces the document to their own role's visibility, and they
+              have no reason to file a document against an arbitrary project. */}
           {isStaff && (
-            <Select label="Visibility" options={visibilityOptions} value={visibility} onChange={(e) => setVisibility(e.target.value)} />
+            <>
+              <Select label="Visibility" options={visibilityOptions} value={visibility} onChange={(e) => setVisibility(e.target.value)} />
+              <Select
+                label="Project (optional)"
+                options={projectOptions}
+                placeholder="General / Unassigned"
+                value={project}
+                onChange={(e) => setProject(e.target.value)}
+              />
+            </>
           )}
           <div>
             <FileUpload

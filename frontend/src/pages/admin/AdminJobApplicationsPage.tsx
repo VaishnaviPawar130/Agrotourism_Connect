@@ -187,7 +187,7 @@ export function AdminJobApplicationsPage() {
 
   return (
     <div>
-      <PageHeader title="Job Applications" description="Review candidate applications submitted through the public Careers page." />
+      <PageHeader title="Job Applications" description="Review candidate applications submitted through the public Careers page." backTo="/dashboard" />
       {downloadError && (
         <div className="mb-4">
           <ApiErrorBanner message={downloadError} />
@@ -221,10 +221,19 @@ export function AdminJobApplicationsPage() {
         error={error}
         keyExtractor={(a) => a._id}
         emptyLabel="No applications yet."
+        showSerial
+        page={page}
+        pageSize={20}
       />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <Modal open={!!detailId} onClose={() => setDetailId(null)} title={detail ? detail.fullName : 'Application'} size="lg">
+      <Modal
+        open={!!detailId}
+        onClose={() => setDetailId(null)}
+        title={detail ? detail.fullName : 'Application'}
+        size="lg"
+        showBack
+      >
         {detailLoading && <LoadingState />}
         {!detailLoading && detailError && !detail && <ErrorState message={detailError} />}
         {!detailLoading && detail && (

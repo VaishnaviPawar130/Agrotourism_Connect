@@ -80,47 +80,46 @@ export function ProjectDetailPage() {
   };
 
   return (
-    <div className="bg-brand-cream/40">
+    <div className="bg-brand-offwhite">
       {/* Hero */}
-      <section className="relative min-h-[200px] overflow-hidden text-white sm:min-h-[220px]">
-        <img src={heroImage} alt={project.projectName} className="absolute inset-0 h-full w-full object-cover" loading="eager" />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(90deg, rgba(15,40,30,0.90) 0%, rgba(15,40,30,0.72) 30%, rgba(15,40,30,0.35) 58%, rgba(15,40,30,0.08) 100%)',
-          }}
+      <section className="relative flex min-h-[200px] items-center overflow-hidden sm:min-h-[220px]">
+        <img
+          src={heroImage}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover object-[75%_40%]"
+          loading="eager"
         />
-        <div className="relative mx-auto flex min-h-[200px] max-w-7xl flex-col justify-center px-4 py-6 sm:min-h-[220px] sm:px-6">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#FBF7EE_18%,rgba(251,247,238,0.9)_34%,rgba(251,247,238,0.5)_52%,rgba(251,247,238,0.12)_68%,transparent_82%)]" />
+        <div className="relative mx-auto flex w-full max-w-7xl flex-col justify-center px-4 py-6 sm:px-6">
           <nav className="flex items-center gap-1.5 text-sm">
-            <Link to="/" className="text-brand-goldSoft transition-colors hover:text-white">
+            <Link to="/" className="text-brand-slate transition-colors hover:text-brand-gold">
               Home
             </Link>
-            <ChevronRight className="h-3.5 w-3.5 text-white/50" />
-            <Link to="/projects" className="text-brand-goldSoft transition-colors hover:text-white">
+            <ChevronRight className="h-3.5 w-3.5 text-brand-slate/50" />
+            <Link to="/projects" className="text-brand-slate transition-colors hover:text-brand-gold">
               Projects
             </Link>
-            <ChevronRight className="h-3.5 w-3.5 text-white/50" />
-            <span className="text-white/85">{project.projectName}</span>
+            <ChevronRight className="h-3.5 w-3.5 text-brand-slate/50" />
+            <span className="text-brand-charcoal/80">{project.projectName}</span>
           </nav>
 
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <h1 className="font-serif text-2xl font-semibold leading-tight sm:text-3xl">{project.projectName}</h1>
+            <h1 className="font-serif text-2xl font-semibold leading-tight text-brand-charcoal sm:text-3xl">{project.projectName}</h1>
             <StatusBadge status={project.status} />
           </div>
 
-          <p className="mt-1.5 flex items-center gap-1.5 text-sm text-white/85">
-            <MapPin className="h-4 w-4 text-brand-goldSoft" /> {project.location}
+          <p className="mt-1.5 flex items-center gap-1.5 text-sm text-brand-slate">
+            <MapPin className="h-4 w-4 text-brand-gold" /> {project.location}
           </p>
 
-          <span className="mt-2 inline-block w-fit rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white backdrop-blur">
+          <span className="mt-2 inline-block w-fit rounded-full bg-brand-gold/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-forest">
             {typeLabel}
           </span>
         </div>
       </section>
 
       {/* Tabs row */}
-      <div className="border-b border-brand-border bg-white">
+      <div className="border-b border-brand-border/70 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 overflow-x-auto px-4 sm:px-6">
           <div className="flex shrink-0 items-center gap-1">
             {tabs.map((tab) => {
@@ -152,7 +151,7 @@ export function ProjectDetailPage() {
             </a>
             <button
               onClick={handleShare}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-brand-border px-4 text-sm font-semibold text-brand-charcoal transition-colors hover:bg-brand-cream"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-brand-border/70 px-4 text-sm font-semibold text-brand-charcoal transition-colors hover:bg-brand-cream"
             >
               <Share2 className="h-3.5 w-3.5" />
               Share
@@ -176,23 +175,23 @@ export function ProjectDetailPage() {
                 )}
 
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="rounded-xl border border-brand-border bg-white p-4">
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-forest-100 text-brand-forest">
+                  <div className="rounded-2xl border border-brand-border/70 bg-white p-4 shadow-sm">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-cream text-brand-gold">
                       <MapPin className="h-4 w-4" />
                     </span>
                     <p className="mt-2.5 text-sm font-semibold text-brand-charcoal">Location</p>
                     <p className="text-xs text-brand-slate">{project.location}</p>
                   </div>
-                  <div className="rounded-xl border border-brand-border bg-white p-4">
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-forest-100 text-brand-forest">
+                  <div className="rounded-2xl border border-brand-border/70 bg-white p-4 shadow-sm">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-cream text-brand-gold">
                       <Sprout className="h-4 w-4" />
                     </span>
                     <p className="mt-2.5 text-sm font-semibold text-brand-charcoal">Project Type</p>
                     <p className="text-xs text-brand-slate">{typeLabel}</p>
                   </div>
                   {project.totalLand !== undefined && (
-                    <div className="rounded-xl border border-brand-border bg-white p-4">
-                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-forest-100 text-brand-forest">
+                    <div className="rounded-2xl border border-brand-border/70 bg-white p-4 shadow-sm">
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-cream text-brand-gold">
                         <Ruler className="h-4 w-4" />
                       </span>
                       <p className="mt-2.5 text-sm font-semibold text-brand-charcoal">Land Area</p>
@@ -215,7 +214,7 @@ export function ProjectDetailPage() {
             {activeTab === 'details' && (
               <>
                 <h2 className="font-serif text-2xl font-semibold text-brand-forest">Project Details</h2>
-                <dl className="mt-4 divide-y divide-brand-border rounded-xl border border-brand-border bg-white">
+                <dl className="mt-4 divide-y divide-brand-border/70 rounded-2xl border border-brand-border/70 bg-white shadow-sm">
                   <DetailRow label="Project Name" value={project.projectName} />
                   <DetailRow label="Project Code" value={project.projectCode} />
                   <DetailRow label="Project Type" value={typeLabel} />
@@ -229,7 +228,7 @@ export function ProjectDetailPage() {
             {activeTab === 'documents' && (
               <>
                 <h2 className="font-serif text-2xl font-semibold text-brand-forest">Documents</h2>
-                <div className="mt-4 rounded-xl border border-dashed border-brand-border bg-white p-8 text-center">
+                <div className="mt-4 rounded-2xl border border-dashed border-brand-border/70 bg-white p-8 text-center shadow-sm">
                   <FileText className="mx-auto h-6 w-6 text-brand-slate" />
                   <p className="mt-2 text-sm text-brand-slate">No public documents have been shared for this project yet.</p>
                 </div>
@@ -239,7 +238,7 @@ export function ProjectDetailPage() {
             {activeTab === 'location' && (
               <>
                 <h2 className="font-serif text-2xl font-semibold text-brand-forest">Location</h2>
-                <div className="mt-4 flex items-center gap-2 rounded-xl border border-brand-border bg-white p-4 text-sm text-brand-charcoal">
+                <div className="mt-4 flex items-center gap-2 rounded-2xl border border-brand-border/70 bg-white p-4 text-sm text-brand-charcoal shadow-sm">
                   <MapPin className="h-4 w-4 text-brand-gold" />
                   {project.location}
                 </div>
@@ -249,9 +248,9 @@ export function ProjectDetailPage() {
 
           {/* Right column */}
           <div className="space-y-5">
-            <div className="rounded-2xl border border-brand-border bg-white p-5 shadow-[0_2px_10px_rgba(32,56,47,0.06)]">
+            <div className="rounded-2xl border border-brand-border/70 bg-white p-5 shadow-sm">
               <h3 className="font-serif text-lg font-semibold text-brand-forest">Project Highlights</h3>
-              <dl className="mt-3 divide-y divide-brand-border">
+              <dl className="mt-3 divide-y divide-brand-border/70">
                 <HighlightRow icon={Sprout} label="Project Type" value={typeLabel} />
                 {project.totalLand !== undefined && <HighlightRow icon={Ruler} label="Total Land Area" value={`${project.totalLand} Acres`} />}
                 <HighlightRow icon={ListChecks} label="Project Status" value={project.status.replaceAll('_', ' ')} />
@@ -259,12 +258,12 @@ export function ProjectDetailPage() {
               </dl>
             </div>
 
-            <div className="rounded-2xl bg-brand-cream p-5">
+            <div className="rounded-2xl border border-brand-border/70 bg-brand-cream/60 p-5 shadow-sm">
               <h3 className="font-serif text-lg font-semibold text-brand-forest">Interested in this project?</h3>
               <p className="mt-1.5 text-sm text-brand-slate">Register as an investor to express your interest.</p>
               <Link
                 to="/register"
-                className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg bg-brand-forest px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-forest focus-visible:ring-offset-2"
+                className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg bg-brand-gold px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-gold/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2"
               >
                 <UserPlus className="h-4 w-4" />
                 Become an Investor
@@ -311,7 +310,7 @@ function ProjectGallery({
 }) {
   return (
     <div className="mt-6">
-      <div className="group relative aspect-[16/7] overflow-hidden rounded-xl">
+      <div className="group relative aspect-[16/7] overflow-hidden rounded-2xl border border-brand-border/70 shadow-sm">
         <img
           src={gallery[activeImage]}
           alt={`${projectName} photo ${activeImage + 1}`}

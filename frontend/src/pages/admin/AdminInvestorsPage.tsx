@@ -40,9 +40,9 @@ export function AdminInvestorsPage() {
 
   return (
     <div>
-      <PageHeader title="Investors" description="Registered investor profiles." />
+      <PageHeader title="Investors" description="Registered investor profiles." backTo="/dashboard" />
       <FilterBar search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} searchPlaceholder="Search investors..." />
-      <DataTable columns={columns} rows={investors} loading={loading} error={error} keyExtractor={(i) => i._id} />
+      <DataTable columns={columns} rows={investors} loading={loading} error={error} keyExtractor={(i) => i._id} showSerial page={page} pageSize={20} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );

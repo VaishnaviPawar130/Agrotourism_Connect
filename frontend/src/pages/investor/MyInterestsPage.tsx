@@ -37,8 +37,16 @@ export function MyInterestsPage() {
 
   return (
     <div>
-      <PageHeader title="My Interests" description="Track the investment interests you've submitted." />
-      <DataTable columns={columns} rows={interests} loading={loading} error={error} keyExtractor={(i) => i._id} emptyLabel="You haven't submitted any interest yet" />
+      <PageHeader title="My Interests" description="Track the investment interests you've submitted." backTo="/dashboard" />
+      <DataTable
+        columns={columns}
+        rows={interests}
+        loading={loading}
+        error={error}
+        keyExtractor={(i) => i._id}
+        emptyLabel="You haven't submitted any interest yet"
+        showSerial
+      />
     </div>
   );
 }

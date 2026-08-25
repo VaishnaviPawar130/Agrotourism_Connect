@@ -49,9 +49,14 @@ export function AdminLandsPage() {
     {
       header: 'Status',
       accessor: (l) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 whitespace-nowrap">
           <StatusBadge status={l.status} />
-          <Select options={statusOptions} value={l.status} onChange={(e) => handleStatusChange(l._id, e.target.value)} className="py-1 text-xs" />
+          <Select
+            options={statusOptions}
+            value={l.status}
+            onChange={(e) => handleStatusChange(l._id, e.target.value)}
+            className="w-[190px] py-1 text-xs"
+          />
         </div>
       ),
     },
@@ -59,9 +64,9 @@ export function AdminLandsPage() {
 
   return (
     <div>
-      <PageHeader title="Land Submissions" description="Review and manage submitted land." />
+      <PageHeader title="Land Submissions" description="Review and manage submitted land." backTo="/dashboard" />
       <FilterBar search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} searchPlaceholder="Search lands..." />
-      <DataTable columns={columns} rows={lands} loading={loading} error={error} keyExtractor={(l) => l._id} />
+      <DataTable columns={columns} rows={lands} loading={loading} error={error} keyExtractor={(l) => l._id} showSerial page={page} pageSize={20} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );

@@ -29,6 +29,7 @@ import { DashboardIndex } from './pages/dashboard/DashboardIndex';
 import { DocumentsPage } from './pages/shared/DocumentsPage';
 
 import { UsersPage } from './pages/admin/UsersPage';
+import { StaffPage } from './pages/admin/StaffPage';
 import { AdminLandsPage } from './pages/admin/AdminLandsPage';
 import { AdminProjectsPage } from './pages/admin/AdminProjectsPage';
 import { AdminInvestorsPage } from './pages/admin/AdminInvestorsPage';
@@ -52,6 +53,9 @@ import { InvestorProfilePage } from './pages/investor/InvestorProfilePage';
 
 const STAFF_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.PROJECT_MANAGER];
 const CAREERS_ADMIN_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN];
+// Staff management is intentionally narrower than STAFF_ROLES: a Project
+// Manager can be assigned to work as staff, but must not manage other staff.
+const STAFF_MANAGER_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN];
 
 export default function App() {
   // Hold rendering until a persisted token has been validated, so a protected
@@ -121,6 +125,10 @@ export default function App() {
           <Route element={<ProtectedRoute roles={CAREERS_ADMIN_ROLES} />}>
             <Route path="/dashboard/careers" element={<AdminVacanciesPage />} />
             <Route path="/dashboard/job-applications" element={<AdminJobApplicationsPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={STAFF_MANAGER_ROLES} />}>
+            <Route path="/dashboard/staff" element={<StaffPage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={[UserRole.INVESTOR]} />}>

@@ -49,7 +49,7 @@ export function InvestorProfilePage() {
 
   return (
     <div>
-      <PageHeader title="Investor Profile" description="Keep your investment preferences up to date." />
+      <PageHeader title="Investor Profile" description="Keep your investment preferences up to date." backTo="/dashboard" />
       <div className="max-w-lg rounded-lg border border-slate-200 bg-white p-6">
         {message && <div className="mb-4 rounded-md bg-brand-forest/10 px-3 py-2 text-sm text-brand-forest">{message}</div>}
         {error && (

@@ -38,6 +38,7 @@ interface DocumentOption {
   _id: string;
   title: string;
   originalName: string;
+  category: string;
 }
 
 type ApprovalFormState = Omit<ApprovalInput, 'approvalType'> & {
@@ -255,13 +256,17 @@ export function AdminApprovalsPage() {
 
   const projectOptions = projects.map((p) => ({ label: p.projectName, value: p._id }));
   const assigneeOptions = assignees.map((a) => ({ label: `${a.fullName} (${a.role.replaceAll('_', ' ')})`, value: a._id }));
-  const documentOptions = documents.map((d) => ({ label: d.title || d.originalName, value: d._id }));
+  const documentOptions = documents.map((d) => ({
+    label: `${d.title || d.originalName} — ${d.category.replaceAll('_', ' ')}`,
+    value: d._id,
+  }));
 
   return (
     <div>
       <PageHeader
         title="Approval Tracking"
         description="Track statutory approvals, licenses and clearances required across project development."
+        backTo="/dashboard"
         actions={
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" /> New Approval
@@ -295,10 +300,19 @@ export function AdminApprovalsPage() {
         error={error}
         keyExtractor={(a) => a._id}
         emptyLabel="No approvals yet — add one to start tracking statutory clearances."
+        showSerial
+        page={page}
+        pageSize={20}
       />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? 'Edit Approval' : 'New Approval'} size="lg">
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingId ? 'Edit Approval' : 'New Approval'}
+        size="lg"
+        showBack
+      >
         <div className="space-y-4">
           <ApiErrorBanner message={formError} />
 
