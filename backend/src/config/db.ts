@@ -10,7 +10,8 @@ export async function connectDB(): Promise<void> {
   while (attempt < MAX_RETRIES) {
     try {
       await mongoose.connect(env.MONGODB_URI);
-      console.log(`[db] Connected to MongoDB at ${env.MONGODB_URI}`);
+      // Never log the URI itself — it embeds the DB username/password.
+      console.log('[db] Connected to MongoDB');
       return;
     } catch (err) {
       attempt += 1;

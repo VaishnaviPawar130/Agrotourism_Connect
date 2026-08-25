@@ -4,7 +4,9 @@ import { connectDB } from './config/db';
 
 async function main() {
   await connectDB();
-  app.listen(env.PORT, () => {
+  // Bind to 0.0.0.0 (not just localhost) so the process is reachable from
+  // outside its container — required on Railway and similar PaaS hosts.
+  app.listen(env.PORT, '0.0.0.0', () => {
     console.log(`[server] Agrotourism Connect API running on port ${env.PORT}`);
   });
 }
