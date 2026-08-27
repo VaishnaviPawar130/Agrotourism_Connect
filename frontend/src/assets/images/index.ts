@@ -1,5 +1,5 @@
-import aerialResort from './01_aerial_agrotourism_resort.webp';
-import rawLand from './02_raw_tourism_land.webp';
+import aerialResort from './25_land_development_view.png';
+import rawLand from './26_land_dev1.png';
 import premiumCottages from './03_premium_resort_cottages.webp';
 import aframeCottages from './04_aframe_cottages.webp';
 import podCottages from './05_pod_prefab_cottages.webp';

@@ -52,7 +52,7 @@ export function LandDevelopmentPage() {
               </Link>
             </div>
             <div className="overflow-hidden rounded-2xl border border-brand-border/70 shadow-sm">
-              <img src={images.tourismMasterplan} alt="Tourism masterplan concept for land development" className="h-72 w-full object-cover sm:h-96" loading="lazy" />
+              <img src={images.aerialResort} alt="Developed tourism asset from raw land" className="h-72 w-full object-cover sm:h-96" loading="lazy" />
             </div>
           </div>
         </div>
