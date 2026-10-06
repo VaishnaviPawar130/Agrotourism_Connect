@@ -25,8 +25,69 @@ body {
   animation: auth-modal-in 0.18s ease-out;
 }
 
+@keyframes chatbot-window-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-chatbot-window-in {
+  animation: chatbot-window-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom right;
+}
+
+@keyframes agro-buddy-wave {
+  0%, 50%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  12% {
+    transform: translateY(-2px) rotate(-3deg);
+  }
+  24% {
+    transform: translateY(-2px) rotate(3deg);
+  }
+  36% {
+    transform: translateY(-1px) rotate(-1.5deg);
+  }
+}
+
+.animate-agro-buddy-wave {
+  animation: agro-buddy-wave 2.8s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* Thin, subtle scrollbar for the chatbot message list. */
+.chatbot-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 77, 58, 0.25) transparent;
+}
+
+.chatbot-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chatbot-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chatbot-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(31, 77, 58, 0.22);
+  border-radius: 9999px;
+}
+
+.chatbot-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(31, 77, 58, 0.4);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-auth-modal-in {
+  .animate-auth-modal-in,
+  .animate-chatbot-window-in,
+  .animate-agro-buddy-wave {
     animation: none;
   }
 }

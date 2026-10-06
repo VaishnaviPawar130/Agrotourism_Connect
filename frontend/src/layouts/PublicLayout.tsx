@@ -24,6 +24,7 @@ import { useAuthModalStore } from '../store/authModalStore';
 import { images } from '../assets/images';
 import { SOCIAL_LINKS } from '../constants/social';
 import { InstagramPreviewSection } from '../components/InstagramPreviewSection';
+import { PublicChatbot } from '../components/chatbot/PublicChatbot';
 
 const topLinks = [
   { label: 'Home', to: '/' },
@@ -387,6 +388,8 @@ export function PublicLayout() {
           &copy; {new Date().getFullYear()} Agrotourism Connect. All rights reserved.
         </div>
       </footer>
+
+      <PublicChatbot />
     </div>
   );
 }

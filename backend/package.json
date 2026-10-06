@@ -9,7 +9,10 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "seed": "tsx src/utils/seed.ts",
-    "test": "vitest run"
+    "rag:sync-projects": "tsx src/scripts/syncProjectKnowledge.ts",
+    "test": "vitest run",
+    "rag:sync-public": "tsx src/scripts/syncPublicKnowledge.ts",
+    "rag:test-retrieval": "tsx src/scripts/testRetrieval.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -20,6 +23,7 @@
     "mongoose": "^8.5.0",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "openai": "^7.7.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
