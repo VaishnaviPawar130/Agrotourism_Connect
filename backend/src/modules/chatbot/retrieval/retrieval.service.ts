@@ -3,6 +3,22 @@ import { KnowledgeChunk } from '../knowledge/knowledge.model';
 
 const VECTOR_INDEX_NAME = 'knowledge_vector_index';
 
+// Intent-scoped supplemental retrieval from the same collection as vector search.
+// Never use unsynced constants or private records as company answer evidence.
+export async function retrievePublicServiceKnowledge(limit = 5) {
+    return KnowledgeChunk.find({
+        visibility: 'PUBLIC',
+        sourceType: { $in: ['COMPANY', 'SERVICE'] },
+        category: { $in: ['ABOUT_SERVICES', 'SERVICES'] },
+        'metadata.managedBy': 'public-website-sync',
+    })
+        .select('title category sourceType sourceId sourceName content')
+        // COMPANY precedes SERVICE; the overview and core summary fit within five.
+        .sort({ sourceType: 1, sourceId: 1 })
+        .limit(limit)
+        .lean();
+}
+
 export async function retrieveRelevantKnowledge(
     query: string,
     limit = 5

@@ -9,7 +9,7 @@ import { PUBLIC_KNOWLEDGE } from './publicKnowledge.data';
 
 const PUBLIC_KNOWLEDGE_MANAGER = 'public-website-sync';
 
-export async function syncPublicKnowledge() {
+export async function syncPublicKnowledge({ dryRun = false }: { dryRun?: boolean } = {}) {
     // 1. Check duplicate sourceType + sourceId combinations
     const seen = new Set<string>();
 
@@ -23,7 +23,12 @@ export async function syncPublicKnowledge() {
         }
 
         seen.add(key);
+        const validationError = new KnowledgeChunk({ ...item, visibility: 'PUBLIC' }).validateSync();
+        if (validationError) throw validationError;
     }
+
+    // Validate the actual schema without connecting, embedding or changing MongoDB.
+    if (dryRun) return { synced: 0, planned: PUBLIC_KNOWLEDGE.length };
 
     // 2. Keep track of active source IDs
     const activeSourceIds = PUBLIC_KNOWLEDGE.map(
@@ -32,7 +37,7 @@ export async function syncPublicKnowledge() {
 
     // 3. Generate embedding and upsert each record
     for (const item of PUBLIC_KNOWLEDGE) {
-        const embedding = await generateEmbedding(item.content);
+        const embedding = await generateEmbedding(`${item.title}\n${item.content}`);
 
         await KnowledgeChunk.findOneAndUpdate(
             {
