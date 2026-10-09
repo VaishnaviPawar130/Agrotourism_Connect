@@ -44,6 +44,23 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('public knowledge provenance and sync', () => {
+    it('preserves the six actual Knowledge Center topics and coming-soon status', () => {
+        const page = readFileSync(resolve(__dirname, '../../../frontend/src/pages/public/KnowledgeCenterPage.tsx'), 'utf8');
+        const topics = [...page.matchAll(/title: '([^']+)'/g)].map((match) => match[1]);
+        expect(topics).toHaveLength(6);
+        const contents = PUBLIC_KNOWLEDGE.find((item) => item.sourceId === 'knowledge:center-topics')!.content;
+        for (const topic of topics) expect(contents).toContain(topic);
+        expect(PUBLIC_KNOWLEDGE.find((item) => item.sourceId === 'knowledge:center-overview')!.content)
+            .toContain('Detailed articles will be published here soon');
+    });
+
+    it('contains only public prose, excluding placeholders, private data and unsupported offers', () => {
+        const prose = PUBLIC_KNOWLEDGE.map((item) => `${item.title} ${item.content}`).join('\n');
+        expect(prose).toContain('info@agrotourismconnect.com');
+        expect(prose).not.toMatch(/00000|mongodb(?:\+srv)?:|OPENROUTER|JWT_SECRET|frontend\/src|backend\/src|youtube\.com/);
+        expect(PUBLIC_KNOWLEDGE.some((item) => ['TRAINING', 'PRICING', 'OWNER_FOUNDER'].includes(item.category))).toBe(false);
+        expect(PUBLIC_KNOWLEDGE.some((item) => item.sourceType === 'PROJECT')).toBe(false);
+    });
     it('has one canonical dataset with valid schema and existing public sources', () => {
         expect(legacyKnowledge).toBe(PUBLIC_KNOWLEDGE);
         expect(new Set(PUBLIC_KNOWLEDGE.map((item) => item.sourceId)).size).toBe(PUBLIC_KNOWLEDGE.length);
@@ -92,6 +109,32 @@ describe('public knowledge provenance and sync', () => {
 });
 
 describe('intent-specific retrieval through the real retrieval functions', () => {
+    it.each(['KNOWLEDGE_CENTER', 'PLATFORM_FEATURES', 'CONTACT', 'LOGIN_AUTH', 'INVESTMENT'] as const)(
+        'recovers synced %s records with public-only scoped queries', async (intent) => {
+            const record = PUBLIC_KNOWLEDGE.find((item) => item.category === intent)!;
+            query.lean.mockResolvedValue([record]);
+            expect(await retrieveIntentKnowledge('Tell me more', intent)).toEqual([record]);
+            expect(find).toHaveBeenCalledWith(expect.objectContaining({
+                visibility: 'PUBLIC', 'metadata.managedBy': 'public-website-sync',
+                $or: expect.arrayContaining([{ category: intent }]),
+            }));
+        },
+    );
+
+    it('does not crowd Knowledge Center records out with unrelated vector results', async () => {
+        const record = PUBLIC_KNOWLEDGE.find((item) => item.sourceId === 'knowledge:center-topics')!;
+        query.lean.mockResolvedValue([record]);
+        aggregate.mockResolvedValue(Array.from({ length: 5 }, (_, i) => ({ title: `Unrelated ${i}`, content: `Other ${i}`, score: 0.99 })));
+        expect((await retrieveIntentKnowledge('What does Knowledge Center contain?', 'KNOWLEDGE_CENTER'))[0]).toEqual(record);
+    });
+
+    it('finds a specific service in the expanded catalogue when embeddings fail', async () => {
+        embed.mockRejectedValueOnce(new Error('offline'));
+        query.lean.mockResolvedValue(PUBLIC_KNOWLEDGE.filter((item) => ['ABOUT_SERVICES', 'SERVICES'].includes(item.category)));
+        const result = await retrieveIntentKnowledge('What food experiences do you offer?', 'ABOUT_SERVICES');
+        expect(result.some((item) => item.sourceId === 'service:food-experiences')).toBe(true);
+        expect(result.length).toBeLessThanOrEqual(5);
+    });
     // Embeddings and MongoDB responses are mocked; no claim of live vector accuracy.
     it.each(questions)('retrieves verified service records for %s', async (message) => {
         aggregate.mockResolvedValue([{ ...land, score: 0.91 }]);
@@ -107,7 +150,8 @@ describe('intent-specific retrieval through the real retrieval functions', () =>
             visibility: 'PUBLIC', sourceType: { $in: ['COMPANY', 'SERVICE'] },
             category: { $in: ['ABOUT_SERVICES', 'SERVICES'] }, 'metadata.managedBy': 'public-website-sync',
         });
-        expect(query.limit).toHaveBeenCalledWith(5);
+        // Expanded catalogue is ranked before the final five evidence candidates.
+        expect(query.limit).toHaveBeenCalledWith(40);
     });
 
     it.each(questions)('recovers synced services when vector scores are too low: %s', async (message) => {

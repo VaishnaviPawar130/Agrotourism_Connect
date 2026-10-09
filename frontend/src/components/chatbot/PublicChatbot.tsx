@@ -24,8 +24,8 @@ const welcome: ChatMessage = {
 /**
  * Self-contained public chatbot: a floating launcher plus a popup window.
  * Mounted once in PublicLayout so it appears on every public page and nowhere
- * in the authenticated dashboards. History lives in local state only; each
- * request still sends just `{ message }` to POST /api/v1/chat.
+ * in the authenticated dashboards. Recent user questions are sent as topic
+ * context; assistant replies remain display-only.
  */
 export function PublicChatbot() {
   const [open, setOpen] = useState(false);
@@ -45,7 +45,8 @@ export function PublicChatbot() {
     ]);
 
     try {
-      const reply = await sendChatMessage(trimmed);
+      const history = messages.filter((item) => item.role === 'user').slice(-6).map((item) => item.content);
+      const reply = await sendChatMessage(trimmed, history);
       setMessages((prev) => [
         ...prev,
         {
@@ -63,7 +64,7 @@ export function PublicChatbot() {
       sendingRef.current = false;
       setIsSending(false);
     }
-  }, []);
+  }, [messages]);
 
   return (
     <div className="pointer-events-none fixed bottom-3 right-3 top-24 z-50 flex flex-col items-end justify-end gap-2.5 sm:bottom-5 sm:right-5 sm:top-28">

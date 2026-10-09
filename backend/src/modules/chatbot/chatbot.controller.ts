@@ -6,7 +6,7 @@ export async function chatWithAssistant(
     res: Response
 ) {
     try {
-        const { message } = req.body ?? {};
+        const { message, history = [] } = req.body ?? {};
 
         if (
             !message ||
@@ -30,7 +30,17 @@ export async function chatWithAssistant(
             });
         }
 
-        const reply = await generateChatReply(cleanMessage);
+        // Only recent user questions travel as context. Assistant text is not evidence.
+        if (!Array.isArray(history) || history.length > 6 || history.some((item) =>
+            typeof item !== 'string' || !item.trim() || item.length > 1000)) {
+            return res.status(400).json({
+                success: false,
+                message: 'History must contain at most 6 user questions of 1000 characters or fewer',
+                errors: null,
+            });
+        }
+
+        const reply = await generateChatReply(cleanMessage, history.map((item: string) => item.trim()));
 
         return res.status(200).json({
             success: true,

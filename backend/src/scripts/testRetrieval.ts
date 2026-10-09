@@ -4,6 +4,7 @@ import { retrieveIntentKnowledge } from '../modules/chatbot/chatbot.evidence';
 import { KnowledgeChunk } from '../modules/chatbot/knowledge/knowledge.model';
 import { PUBLIC_KNOWLEDGE } from '../modules/chatbot/publicKnowledge/publicKnowledge.data';
 import dns from 'node:dns';
+import type { CompanyIntent } from '../modules/chatbot/chatbot.intent';
 
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 const questions = [
@@ -38,6 +39,20 @@ async function run() {
                 titles: results.map((item) => item.title)
             }));
             if (!supported) process.exitCode = 1;
+        }
+        const topicChecks: { question: string; intent: CompanyIntent; expected: string }[] = [
+            { question: 'What is Knowledge Center here?', intent: 'KNOWLEDGE_CENTER', expected: 'knowledge:center-overview' },
+            { question: 'What topics does Knowledge Center contain?', intent: 'KNOWLEDGE_CENTER', expected: 'knowledge:center-topics' },
+            { question: 'How do I browse projects?', intent: 'PLATFORM_FEATURES', expected: 'website:project-search' },
+            { question: 'What is the email?', intent: 'CONTACT', expected: 'contact:email-location' },
+            { question: 'How do I register?', intent: 'LOGIN_AUTH', expected: 'auth:registration' },
+            { question: 'How can I express investment interest?', intent: 'INVESTMENT', expected: 'investment:express-interest' },
+        ];
+        for (const { question, intent, expected } of topicChecks) {
+            const results = await retrieveIntentKnowledge(question, intent);
+            const passed = results.some((item) => item.sourceId === expected);
+            console.log(JSON.stringify({ question, intent, passed, titles: results.map((item) => item.title) }));
+            if (!passed) process.exitCode = 1;
         }
         const projects = await retrieveIntentKnowledge('What projects are available?', 'PUBLIC_PROJECTS');
         const isolated = projects.every((item) => item.sourceType === 'PROJECT');

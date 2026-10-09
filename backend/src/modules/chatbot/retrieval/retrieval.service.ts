@@ -5,7 +5,7 @@ const VECTOR_INDEX_NAME = 'knowledge_vector_index';
 
 // Intent-scoped supplemental retrieval from the same collection as vector search.
 // Never use unsynced constants or private records as company answer evidence.
-export async function retrievePublicServiceKnowledge(limit = 5) {
+export async function retrievePublicServiceKnowledge(limit = 40) {
     return KnowledgeChunk.find({
         visibility: 'PUBLIC',
         sourceType: { $in: ['COMPANY', 'SERVICE'] },
@@ -17,6 +17,19 @@ export async function retrievePublicServiceKnowledge(limit = 5) {
         .sort({ sourceType: 1, sourceId: 1 })
         .limit(limit)
         .lean();
+}
+
+export async function retrievePublicTopicKnowledge(category: string, limit = 12) {
+    return KnowledgeChunk.find({
+        visibility: 'PUBLIC',
+        'metadata.managedBy': 'public-website-sync',
+        $or: [
+            { category },
+            ...(category === 'INVESTMENT' ? [{ sourceId: 'service:investment-platform' }, { sourceId: 'service:investor-facilitation' }] : []),
+        ],
+    })
+        .select('title category sourceType sourceId sourceName content')
+        .sort({ sourceId: 1 }).limit(limit).lean();
 }
 
 export async function retrieveRelevantKnowledge(
@@ -46,7 +59,7 @@ export async function retrieveRelevantKnowledge(
                 category: 1,
                 sourceType: 1,
                 sourceName: 1,
-                metadata: 1,
+                sourceId: 1,
                 score: {
                     $meta: 'vectorSearchScore'
                 }
