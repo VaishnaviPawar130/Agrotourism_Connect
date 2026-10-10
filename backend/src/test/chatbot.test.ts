@@ -216,11 +216,11 @@ describe('intent routing and grounding', () => {
         },
     );
 
-    it('uses the topic fallback for an empty final answer', async () => {
+    it('uses selected source text for an empty final answer', async () => {
         create.mockResolvedValueOnce(completion('ABOUT_SERVICES'))
             .mockResolvedValueOnce(completion('[0]')).mockResolvedValueOnce(completion(' '));
         retrieve.mockResolvedValue([overview]);
-        expect(await generateChatReply('What do you do?')).toBe(intentFallback('', 'ABOUT_SERVICES'));
+        expect(await generateChatReply('What do you do?')).toBe(overview.content);
     });
 });
 
@@ -242,9 +242,9 @@ describe('failure handling and language', () => {
     it.each([429, 401, 403, 500])('handles classifier API failure %s', async (status) => {
         create.mockRejectedValue({ status, message: 'private provider details' });
         const answer = await generateChatReply('What do you do?');
-        expect(answer).toMatch(/usage limit|temporarily unavailable|unable to provide/);
+        expect(answer).toBe(intentFallback('', 'ABOUT_SERVICES'));
         expect(answer).not.toContain('private provider details');
-        expect(retrieve).not.toHaveBeenCalled();
+        expect(retrieve).toHaveBeenCalled();
     });
 
     it.each([429, 401, 403, 500])('handles final-answer API failure %s', async (status) => {

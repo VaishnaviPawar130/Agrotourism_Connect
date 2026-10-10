@@ -63,7 +63,7 @@ export function isCompanyIntent(
 
 /**
  * Used only when the LLM response is UNKNOWN
- * or malformed.
+ * or malformed, truncated, empty, or unavailable.
  *
  * We intentionally keep this conservative.
  *
@@ -83,12 +83,19 @@ function resolveUnknownIntent(
         .trim()
         .toLowerCase();
 
-    // Recover specific website questions before the broad website fallback.
+    // Contact is the requested action even when the purpose is investment.
+    if (/\b(?:contact|email|phone|whatsapp|reach (?:you|someone)|get in touch)\b/u.test(normalized)) return 'CONTACT';
     if (/\bknowledge cent(?:er|re)\b/u.test(normalized)) return 'KNOWLEDGE_CENTER';
-    if (/\b(?:contact you|contact details|the email|your email|your phone|reach you)\b/u.test(normalized)) return 'CONTACT';
-    if (/\b(?:invest here|invest with you)\b/u.test(normalized)) return 'INVESTMENT';
-    if (/\bwho (?:owns|founded|runs) (?:this|you|agrotourism connect)\b/u.test(normalized)) return 'OWNER_FOUNDER';
-    if (/\b(?:projects are available|current projects|available projects)\b/u.test(normalized)) return 'PUBLIC_PROJECTS';
+    // Workshop registration/pricing must not become account access/service pricing.
+    if (/\b(?:training|workshops?|courses?)\b/u.test(normalized)) return 'TRAINING';
+    if (/\b(?:register|registration|sign[ -]?up|create (?:an? )?account|log[ -]?in|sign in|password|account access)\b/u.test(normalized)) return 'LOGIN_AUTH';
+    if (/\b(?:owner|founder|cofounder|leadership)\b|\bwho (?:owns|founded|runs)\b/u.test(normalized)) return 'OWNER_FOUNDER';
+    if (/\b(?:jobs?|vacanc(?:y|ies)|openings?|hiring|careers?|internships?)\b/u.test(normalized)) return 'JOBS';
+    if (/\b(?:pricing|prices?|fees?|charges?|costs?|packages?)\b/u.test(normalized)) return 'PRICING';
+    if (/\b(?:invest|investment|investors?|funding|returns)\b/u.test(normalized)) return 'INVESTMENT';
+    if (/\b(?:browse|search|filter|sort|share|navigation|gallery|dashboard|platform features)\b/u.test(normalized)) return 'PLATFORM_FEATURES';
+    if (/\b(?:(?:public|available|current|ongoing|listed|published) projects|projects (?:are |currently )?available|show me (?:the )?projects)\b/u.test(normalized)) return 'PUBLIC_PROJECTS';
+    if (/\b(?:your services|services (?:do you|you)|what do you do)\b/u.test(normalized)) return 'ABOUT_SERVICES';
 
     if (/^(?:what (?:does|do) (?:it|this|they) (?:contain|include|offer|do)|tell me more|what else)[?.!\s\w]*$/u.test(normalized)) {
         for (const previous of history.slice(-6).reverse()) {
@@ -320,6 +327,10 @@ Do not answer the question.
                 ],
             });
 
+        if (response.choices[0]?.finish_reason === 'length') {
+            return resolveUnknownIntent(message, history);
+        }
+
         const raw =
             response.choices[0]
                 ?.message
@@ -392,16 +403,7 @@ Do not answer the question.
             error
         );
 
-        /*
-         * Important:
-         *
-         * An API/provider/network failure is NOT an
-         * UNKNOWN user intent.
-         *
-         * Let chatbot.service.ts handle the provider
-         * failure separately.
-         */
-        throw error;
+        return resolveUnknownIntent(message, history);
     }
 }
 

@@ -135,7 +135,7 @@ Answer naturally and clearly.
 
 /**
  * Generate the final company-specific answer using ONLY
- * the evidence that passed semantic evidence selection.
+ * the evidence accepted by semantic selection or the intent-safe filter.
  */
 async function generateGroundedAnswer(
     message: string,
@@ -154,6 +154,10 @@ async function generateGroundedAnswer(
      * - credentials
      * - embeddings
      */
+    // Extractive fallback preserves complete source text, including limitations.
+    const evidenceAnswer = () => knowledge.slice(0, 3)
+        .map((item) => item.content?.trim()).filter(Boolean).join('\n\n');
+
     const safeSources =
         knowledge.map(
             (item, index) => ({
@@ -250,14 +254,11 @@ ${JSON.stringify(safeSources)}
          *
          * "Hello! How can I help you today?"
          *
-         * It should use the topic-specific deterministic
-         * fallback instead.
+         * Preserve the selected evidence when the provider cannot summarize it.
          */
-        if (!cleaned.trim()) {
-            return intentFallback(
-                message,
-                intent
-            );
+        if (!cleaned.trim() || response.choices[0]?.finish_reason === 'length'
+            || /^(?:thinking process|here['\u2019]s a thinking process|response safety:)/i.test(cleaned)) {
+            return evidenceAnswer();
         }
 
         return cleaned;
@@ -268,9 +269,7 @@ ${JSON.stringify(safeSources)}
             error
         );
 
-        return providerFailureMessage(
-            error
-        );
+        return evidenceAnswer();
     }
 }
 
