@@ -64,6 +64,49 @@ afterEach(() => {
     vi.unstubAllEnvs();
 });
 
+describe('final answer style contract', () => {
+    // These test the provider instructions and response plumbing, not live model compliance.
+    it.each([
+        ['How can I contact you?', 'CONTACT'],
+        ['What is agro tourism?', 'GENERAL_TOURISM'],
+    ] as const)('requests brief answers only at generation time: %s', async (question, intent) => {
+        create.mockResolvedValueOnce(completion(intent));
+        if (intent === 'CONTACT') {
+            retrieve.mockResolvedValue([{ category: 'CONTACT', content: 'Use the website contact form.' }]);
+            create.mockResolvedValueOnce(completion('[0]'));
+        }
+        const answer = intent === 'CONTACT' ? 'Use the website contact form.' : 'Agro tourism lets visitors experience farm life.';
+        create.mockResolvedValueOnce(completion(answer));
+        expect(await generateChatReply(question)).toBe(answer);
+        const requests = create.mock.calls.map(([request]) => request);
+        const prompt = requests.at(-1).messages[0].content;
+        expect(prompt).toContain('1 to 3 sentences');
+        expect(prompt).toContain('under 60 words');
+        expect(prompt).toContain('about 80 words');
+        expect(prompt).toContain("Answer only the user's actual question");
+        expect(prompt).toContain('retain any qualification necessary');
+        for (const request of requests.slice(0, -1)) {
+            expect(request.messages[0].content).not.toContain('small website chatbot UI');
+        }
+    });
+
+    it.each(['explain', 'tell me more', 'in detail', 'give details'])(
+        'allows longer grounded answers when requested with "%s"', async (phrase) => {
+            create.mockResolvedValueOnce(completion('ABOUT_SERVICES'))
+                .mockResolvedValueOnce(completion('[0]'));
+            const detailed = 'Verified service information. '.repeat(30).trim();
+            retrieve.mockResolvedValue([{ content: detailed }]);
+            create.mockResolvedValueOnce(completion(detailed));
+            const question = `${phrase}: What does this project do?`;
+            expect(await generateChatReply(question)).toBe(detailed);
+            const request = create.mock.calls.at(-1)![0];
+            expect(request.messages[0].content).toContain(`"${phrase}"`);
+            expect(request.messages[0].content).toContain('allow a longer focused answer');
+            expect(request.messages.at(-1).content).toBe(question);
+        },
+    );
+});
+
 describe('semantic classification contract', () => {
     it.each(examples)('forwards natural wording unchanged: %s -> %s', async (message, intent) => {
         create.mockResolvedValue(completion(intent));
@@ -133,7 +176,7 @@ describe('intent routing and grounding', () => {
             expect(create).toHaveBeenCalledTimes(2);
         } else if (intent === 'GENERAL') {
             expect(await generateChatReply(message)).toBe(intentFallback(message, intent));
-            expect(retrieve).not.toHaveBeenCalled();
+            expect(retrieve).toHaveBeenCalledWith(message, 5);
             expect(create).toHaveBeenCalledTimes(1);
         } else {
             expect(await generateChatReply(message)).toBe(intentFallback(message, intent));
@@ -152,7 +195,7 @@ describe('intent routing and grounding', () => {
     it('returns the platform scope for non-company uncertainty without generating an answer', async () => {
         create.mockResolvedValueOnce(completion('UNKNOWN'));
         expect(await generateChatReply('What is React?')).toBe(intentFallback('', 'GENERAL'));
-        expect(retrieve).not.toHaveBeenCalled();
+        expect(retrieve).toHaveBeenCalledWith('What is React?', 5);
         expect(create).toHaveBeenCalledTimes(1);
     });
 
@@ -221,6 +264,95 @@ describe('intent routing and grounding', () => {
             .mockResolvedValueOnce(completion('[0]')).mockResolvedValueOnce(completion(' '));
         retrieve.mockResolvedValue([overview]);
         expect(await generateChatReply('What do you do?')).toBe(overview.content);
+    });
+});
+
+describe('broad semantic recovery before scope fallback', () => {
+    const service = {
+        title: 'Tourism Feasibility and Project Planning', sourceType: 'SERVICE', category: 'SERVICES',
+        content: 'Agrotourism Connect supports site evaluation, tourism feasibility, concept planning and development.',
+        score: 0.91,
+    };
+    const relatedQuestions = [
+        'How can I turn my farm into a tourism business?',
+        'Can I develop my agricultural land for tourism?',
+        'How can I start a farm stay?',
+        'I have land, what tourism business can I start?',
+        'How do I know if my land is suitable for agro tourism?',
+    ];
+
+    // Provider responses are mocked: verify routing/contracts, not live semantic accuracy.
+    it.each(relatedQuestions)('grounds a GENERAL or recovered UNKNOWN question: %s', async (question) => {
+        for (const label of ['GENERAL', 'UNKNOWN']) {
+            create.mockReset();
+            retrieve.mockClear().mockResolvedValue([service]);
+            create.mockResolvedValueOnce(completion(label))
+                .mockResolvedValueOnce(completion('[0]'))
+                .mockResolvedValueOnce(completion('Start with site evaluation and tourism feasibility, then concept planning.'));
+            expect(await generateChatReply(question)).toContain('site evaluation');
+            expect(retrieve).toHaveBeenCalledExactlyOnceWith(question, 5);
+            expect(retrieveServices).not.toHaveBeenCalled();
+            expect(retrieveTopics).not.toHaveBeenCalled();
+            const prompt = create.mock.calls[2][0].messages[0].content;
+            expect(prompt).toContain(service.content);
+            expect(prompt).toContain('Summarize ONLY');
+            expect(prompt).toContain('under 60 words');
+        }
+    });
+
+    it.each(['Who won the cricket match?', 'Tell me a joke', 'What is quantum physics?', 'Write a Python sorting algorithm'])(
+        'rejects irrelevant high-scoring records for %s', async (question) => {
+            retrieve.mockResolvedValue([service]);
+            create.mockResolvedValueOnce(completion('GENERAL')).mockResolvedValueOnce(completion('[]'));
+            expect(await generateChatReply(question)).toBe(intentFallback(question, 'GENERAL'));
+            expect(retrieve).toHaveBeenCalledExactlyOnceWith(question, 5);
+            expect(create).toHaveBeenCalledTimes(2); // No answer generator.
+            expect(create.mock.calls[1][0].messages[0].content).toContain('Reject unrelated requests');
+        },
+    );
+
+    it.each([undefined, 0.79, NaN, Infinity])('rejects missing/weak/nonfinite scores: %s', async (score) => {
+        retrieve.mockResolvedValue([{ ...service, score }]);
+        create.mockResolvedValueOnce(completion('GENERAL'));
+        expect(await generateChatReply(relatedQuestions[0])).toBe(intentFallback('', 'GENERAL'));
+        expect(create).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(['', 'null', '{}', '["0"]', '[-1]', '[1]', '[0,0]', '[0.5]', '```[0]```', 'exception', 'truncated'])(
+        'fails closed for unverified broad relevance: %s', async (output) => {
+            retrieve.mockResolvedValue([service]);
+            create.mockResolvedValueOnce(completion('GENERAL'));
+            if (output === 'exception') create.mockRejectedValueOnce(new Error('offline'));
+            else if (output === 'truncated') create.mockResolvedValueOnce({ choices: [{ finish_reason: 'length', message: { content: '[0]' } }] });
+            else create.mockResolvedValueOnce(completion(output));
+            expect(await generateChatReply(relatedQuestions[0])).toBe(intentFallback('', 'GENERAL'));
+            expect(create).toHaveBeenCalledTimes(2);
+        },
+    );
+
+    it.each(['JOBS', 'PRICING', 'OWNER_FOUNDER', 'INVESTMENT', 'PUBLIC_PROJECTS'])(
+        'does not use broad recovery to infer sensitive facts from %s records', async (category) => {
+            retrieve.mockResolvedValue([{ ...service, category }]);
+            create.mockResolvedValueOnce(completion('GENERAL'));
+            expect(await generateChatReply(relatedQuestions[0])).toBe(intentFallback('', 'GENERAL'));
+            expect(create).toHaveBeenCalledTimes(1);
+        },
+    );
+
+    it('returns scope when vector retrieval fails, with no supplemental topic lookup', async () => {
+        create.mockResolvedValueOnce(completion('GENERAL'));
+        retrieve.mockRejectedValue(new Error('SearchNotEnabled'));
+        expect(await generateChatReply(relatedQuestions[0])).toBe(intentFallback('', 'GENERAL'));
+        expect(create).toHaveBeenCalledTimes(1);
+        expect(retrieveServices).not.toHaveBeenCalled();
+    });
+
+    it('uses only accepted records and retains deterministic generation recovery', async () => {
+        retrieve.mockResolvedValue([{ ...service, score: 0.80 }, { ...service, content: 'Unrelated record.' }]);
+        create.mockResolvedValueOnce(completion('GENERAL')).mockResolvedValueOnce(completion('[0]'))
+            .mockRejectedValueOnce(new Error('offline'));
+        expect(await generateChatReply(relatedQuestions[0])).toBe(service.content);
+        expect(create.mock.calls[2][0].messages[0].content).not.toContain('Unrelated record.');
     });
 });
 

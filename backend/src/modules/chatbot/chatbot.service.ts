@@ -2,6 +2,8 @@ import OpenAI from 'openai';
 
 import {
     classifyIntent,
+    detectCompanyQuestions,
+    type CompanyIntent,
     contextualizeQuestion,
     isCompanyIntent,
     type ChatbotIntent,
@@ -9,6 +11,7 @@ import {
 
 import {
     retrieveIntentKnowledge,
+    retrieveBroadEvidence,
     selectRelevantEvidence,
     type RetrievedKnowledge,
 } from './chatbot.evidence';
@@ -19,6 +22,7 @@ import {
 
 import {
     cleanChatbotReply,
+    CHATBOT_RESPONSE_STYLE,
 } from './chatbot.response';
 
 
@@ -93,6 +97,8 @@ Never output:
 - hidden metadata
 
 Answer naturally and clearly.
+
+${CHATBOT_RESPONSE_STYLE}
                         `.trim(),
                     },
 
@@ -224,6 +230,8 @@ do not include it.
 
 Answer naturally and concisely.
 
+${CHATBOT_RESPONSE_STYLE}
+
 Answer in the language of the user's current message.
 
 VERIFIED EVIDENCE:
@@ -274,6 +282,109 @@ ${JSON.stringify(safeSources)}
 }
 
 
+async function answerCompanyQuestion(
+    message: string,
+    question: string,
+    intent: CompanyIntent,
+    openai: OpenAI,
+    model: string
+): Promise<string> {
+    let knowledge:
+        RetrievedKnowledge[] = [];
+
+    try {
+        knowledge =
+            await retrieveIntentKnowledge(
+                question,
+                intent
+            );
+
+    } catch (error) {
+        console.error(
+            '[chatbot] retrieval failed:',
+            error
+        );
+
+        return intentFallback(
+            message,
+            intent
+        );
+    }
+
+
+    // -------------------------------------------------
+    // NO VERIFIED KNOWLEDGE
+    // -------------------------------------------------
+
+    if (!knowledge.length) {
+        return intentFallback(
+            message,
+            intent
+        );
+    }
+
+
+    // -------------------------------------------------
+    // STEP 5: SELECT RELEVANT EVIDENCE
+    // -------------------------------------------------
+
+    let selected:
+        RetrievedKnowledge[] = [];
+
+    try {
+        selected =
+            await selectRelevantEvidence(
+                question,
+                intent,
+                knowledge,
+                openai,
+                model
+            );
+
+    } catch (error) {
+        console.error(
+            '[chatbot] evidence selection failed:',
+            error
+        );
+
+        /**
+         * Evidence-selector failure must fail closed.
+         *
+         * Do NOT generate a company-specific answer
+         * without validated evidence.
+         */
+        return intentFallback(
+            message,
+            intent
+        );
+    }
+
+
+    // -------------------------------------------------
+    // NO ACCEPTED EVIDENCE
+    // -------------------------------------------------
+
+    if (!selected.length) {
+        return intentFallback(
+            message,
+            intent
+        );
+    }
+
+
+    // -------------------------------------------------
+    // STEP 6: FINAL GROUNDED ANSWER
+    // -------------------------------------------------
+
+    return generateGroundedAnswer(
+        question,
+        intent,
+        selected,
+        openai,
+        model
+    );
+}
+
 /**
  * Main chatbot orchestration.
  *
@@ -283,7 +394,8 @@ ${JSON.stringify(safeSources)}
  *   ↓
  * Intent classifier
  *   ↓
- * GENERAL -> scope message; GENERAL_TOURISM -> tourism education
+ * GENERAL / UNKNOWN -> verified broad retrieval, then scope fallback
+ * GENERAL_TOURISM -> tourism education
  *
  * Company intent
  *   ↓
@@ -338,6 +450,24 @@ export async function generateChatReply(
     // STEP 1: CLASSIFY USER INTENT
     // -----------------------------------------------------
 
+    const parts = detectCompanyQuestions(message);
+    if (parts.length > 1) {
+        const sections: string[] = [];
+        for (const part of parts) {
+            const answer = await answerCompanyQuestion(
+                part.question,
+                contextualizeQuestion(part.question, history),
+                part.intent,
+                openai,
+                model
+            );
+            const label = part.intent.toLowerCase().split('_')
+                .map((word) => word[0].toUpperCase() + word.slice(1)).join(' ');
+            sections.push(`${label}:\n${answer}`);
+        }
+        return sections.join('\n\n');
+    }
+
     let intent: ChatbotIntent;
 
     try {
@@ -385,6 +515,11 @@ export async function generateChatReply(
      * This remains as defensive handling.
      */
     if (intent === 'UNKNOWN' || intent === 'GENERAL') {
+        const question = contextualizeQuestion(message, history);
+        const evidence = await retrieveBroadEvidence(question, openai, model);
+        if (evidence.length) {
+            return generateGroundedAnswer(question, intent, evidence, openai, model);
+        }
         return intentFallback(message, intent);
     }
 
@@ -396,102 +531,8 @@ export async function generateChatReply(
     // -----------------------------------------------------
 
     if (isCompanyIntent(intent)) {
-        let knowledge:
-            RetrievedKnowledge[] = [];
-
-        try {
-            knowledge =
-                await retrieveIntentKnowledge(
-                    question,
-                    intent
-                );
-
-        } catch (error) {
-            console.error(
-                '[chatbot] retrieval failed:',
-                error
-            );
-
-            return intentFallback(
-                message,
-                intent
-            );
-        }
-
-
-        // -------------------------------------------------
-        // NO VERIFIED KNOWLEDGE
-        // -------------------------------------------------
-
-        if (!knowledge.length) {
-            return intentFallback(
-                message,
-                intent
-            );
-        }
-
-
-        // -------------------------------------------------
-        // STEP 5: SELECT RELEVANT EVIDENCE
-        // -------------------------------------------------
-
-        let selected:
-            RetrievedKnowledge[] = [];
-
-        try {
-            selected =
-                await selectRelevantEvidence(
-                    question,
-                    intent,
-                    knowledge,
-                    openai,
-                    model
-                );
-
-        } catch (error) {
-            console.error(
-                '[chatbot] evidence selection failed:',
-                error
-            );
-
-            /**
-             * Evidence-selector failure must fail closed.
-             *
-             * Do NOT generate a company-specific answer
-             * without validated evidence.
-             */
-            return intentFallback(
-                message,
-                intent
-            );
-        }
-
-
-        // -------------------------------------------------
-        // NO ACCEPTED EVIDENCE
-        // -------------------------------------------------
-
-        if (!selected.length) {
-            return intentFallback(
-                message,
-                intent
-            );
-        }
-
-
-        // -------------------------------------------------
-        // STEP 6: FINAL GROUNDED ANSWER
-        // -------------------------------------------------
-
-        return generateGroundedAnswer(
-            question,
-            intent,
-            selected,
-            openai,
-            model
-        );
+        return answerCompanyQuestion(message, question, intent, openai, model);
     }
-
 
     // -----------------------------------------------------
     // DEFENSIVE FALLBACK
