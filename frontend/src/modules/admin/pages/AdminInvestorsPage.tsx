@@ -1,0 +1,49 @@
+import { useEffect, useState } from 'react';
+import { PageHeader } from '../../../shared/components/PageHeader';
+import { FilterBar } from '../../../shared/components/FilterBar';
+import { DataTable, Column } from '../../../shared/components/DataTable';
+import { Pagination } from '../../../shared/components/Pagination';
+import { listInvestors } from '../../investor/services/investorService';
+import { getErrorMessage } from '../../../shared/services/api';
+import { InvestorProfile } from '../../../shared/types';
+
+export function AdminInvestorsPage() {
+  const [investors, setInvestors] = useState<InvestorProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    setLoading(true);
+    setError('');
+    listInvestors({ search, page, limit: 20 })
+      .then((res) => {
+        setInvestors(res.items);
+        setTotalPages(res.totalPages);
+      })
+      .catch((err) => {
+        setInvestors([]);
+        setError(getErrorMessage(err));
+      })
+      .finally(() => setLoading(false));
+  }, [search, page]);
+
+  const columns: Column<InvestorProfile>[] = [
+    { header: 'Investor', accessor: (i) => i.investorName },
+    { header: 'Company', accessor: (i) => i.company ?? '-' },
+    { header: 'Mobile', accessor: (i) => i.mobile },
+    { header: 'City', accessor: (i) => i.city ?? '-' },
+    { header: 'Preferred Range', accessor: (i) => i.preferredInvestmentRange?.replaceAll('_', ' ') ?? '-' },
+  ];
+
+  return (
+    <div>
+      <PageHeader title="Investors" description="Registered investor profiles." backTo="/dashboard" />
+      <FilterBar search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} searchPlaceholder="Search investors..." />
+      <DataTable columns={columns} rows={investors} loading={loading} error={error} keyExtractor={(i) => i._id} showSerial page={page} pageSize={20} />
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+    </div>
+  );
+}

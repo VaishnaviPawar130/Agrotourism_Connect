@@ -45,7 +45,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('public knowledge provenance and sync', () => {
     it('preserves the six actual Knowledge Center topics and coming-soon status', () => {
-        const page = readFileSync(resolve(__dirname, '../../../frontend/src/pages/public/KnowledgeCenterPage.tsx'), 'utf8');
+        const page = readFileSync(resolve(__dirname, '../../../frontend/src/modules/public/pages/KnowledgeCenterPage.tsx'), 'utf8');
         const topics = [...page.matchAll(/title: '([^']+)'/g)].map((match) => match[1]);
         expect(topics).toHaveLength(6);
         const contents = PUBLIC_KNOWLEDGE.find((item) => item.sourceId === 'knowledge:center-topics')!.content;
@@ -73,7 +73,7 @@ describe('public knowledge provenance and sync', () => {
         for (const title of ['Land Development', 'Resort Development', 'Agro Tourism', 'Land Advisory',
             'Project Planning', 'Approvals & Legal', 'Development Support', 'Marketing & Sales', 'Operations Support']) {
             expect(core.content).toContain(title);
-            expect(readFileSync(resolve(__dirname, '../../../frontend/src/pages/public/HomePage.tsx'), 'utf8')).toContain(title);
+            expect(readFileSync(resolve(__dirname, '../../../frontend/src/modules/public/pages/HomePage.tsx'), 'utf8')).toContain(title);
         }
     });
 

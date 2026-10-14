@@ -74,7 +74,7 @@ export function intentFallback(
                 return 'माझ्याकडे सध्या सत्यापित प्रशिक्षण माहिती उपलब्ध नाही.';
 
             case 'GENERAL_TOURISM':
-                return 'मी सध्या त्या पर्यटन विषयावर उत्तर देऊ शकत नाही. कृपया पुन्हा प्रयत्न करा.';
+                return 'कृपया नोंद घ्या: कृषी पर्यटन विकास साधारणपणे जमिनीचे मूल्यांकन, रस्ता/प्रवेश, पर्यटक, उपक्रम, राहण्याची सोय, भोजन, परवानग्या आणि व्यवहार्यता तपासणीपासून सुरू होतो.';
 
             default:
                 return 'माझ्याकडे सध्या त्या विषयाची सत्यापित माहिती उपलब्ध नाही.';
@@ -115,7 +115,7 @@ export function intentFallback(
                 return 'मेरे पास अभी सत्यापित ट्रेनिंग जानकारी उपलब्ध नहीं है।';
 
             case 'GENERAL_TOURISM':
-                return 'मैं अभी उस पर्यटन विषय का उत्तर नहीं दे सकता। कृपया फिर से प्रयास करें।';
+                return 'कृपया ध्यान दें: कृषि पर्यटन विकास आमतौर पर भूमि मूल्यांकन, पहुंच, लक्षित पर्यटकों, गतिविधियों, ठहरने की व्यवस्था, भोजन, अनुमतियों और व्यवहार्यता अध्ययन से शुरू होता है।';
 
             default:
                 return 'मेरे पास अभी उस विषय की सत्यापित जानकारी उपलब्ध नहीं है।';
@@ -155,7 +155,7 @@ export function intentFallback(
             return 'Verified training information is not currently available.';
 
         case 'GENERAL_TOURISM':
-            return 'I’m unable to provide a response right now. Please try again later.';
+            return 'Agro tourism development usually starts with evaluating the land, access, target visitors, activities, stay options, food, permissions and feasibility.';
 
         default:
             return 'I could not find verified information for that request.';

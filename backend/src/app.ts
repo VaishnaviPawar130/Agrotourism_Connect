@@ -19,7 +19,7 @@ import {
 
 import { securityHeaders } from './middleware/securityHeaders';
 
-import chatbotRoutes from './modules/chatbot/chatbot.routes';
+import chatbotRoutes from './modules/chatbot/chatbot.route';
 
 const app = express();
 

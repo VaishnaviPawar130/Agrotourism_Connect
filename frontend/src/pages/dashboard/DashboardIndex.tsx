@@ -1,8 +1,8 @@
-import { useAuthStore } from '../../store/authStore';
-import { UserRole } from '../../types';
-import { AdminDashboardPage } from '../admin/AdminDashboardPage';
-import { MyLandsPage } from '../landowner/MyLandsPage';
-import { OpportunitiesPage } from '../investor/OpportunitiesPage';
+import { useAuthStore } from '../../shared/store/authStore';
+import { UserRole } from '../../shared/types';
+import { AdminDashboardPage } from '../../modules/admin/pages/AdminDashboardPage';
+import { MyLandsPage } from '../../modules/landowner/pages/MyLandsPage';
+import { OpportunitiesPage } from '../../modules/investor/pages/OpportunitiesPage';
 
 export function DashboardIndex() {
   const role = useAuthStore((s) => s.user?.role);

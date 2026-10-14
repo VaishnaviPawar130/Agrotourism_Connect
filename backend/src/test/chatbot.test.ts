@@ -379,9 +379,11 @@ describe('failure handling and language', () => {
         expect(retrieve).toHaveBeenCalled();
     });
 
-    it.each([429, 401, 403, 500])('handles final-answer API failure %s', async (status) => {
+    it.each([429, 401, 403, 500])('handles final-answer API failure %s with useful tourism fallback', async (status) => {
         create.mockResolvedValueOnce(completion('GENERAL_TOURISM')).mockRejectedValueOnce({ status });
-        expect(await generateChatReply('Explain agro tourism')).toMatch(/usage limit|temporarily unavailable|unable to provide/);
+        const reply = await generateChatReply('Explain agro tourism');
+        expect(reply).toContain('Agro tourism development usually starts with evaluating');
+        expect(reply).not.toContain('unable to provide a response');
     });
 
     it.each(['OPENROUTER_API_KEY', 'OPENROUTER_MODEL'])('handles missing %s before API calls', async (key) => {

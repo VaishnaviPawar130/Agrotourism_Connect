@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Plus, Download } from 'lucide-react';
-import { PageHeader } from '../../components/PageHeader';
-import { Button } from '../../components/Button';
-import { DataTable, Column } from '../../components/DataTable';
-import { Modal } from '../../components/Modal';
-import { Input } from '../../components/Input';
-import { Select } from '../../components/Select';
-import { FileUpload } from '../../components/FileUpload';
-import { ApiErrorBanner } from '../../components/ApiErrorBanner';
-import { listDocuments, uploadDocument, downloadDocument } from '../../services/documentService';
-import { listProjects } from '../../services/projectService';
-import { getErrorMessage } from '../../services/api';
-import { useAuthStore } from '../../store/authStore';
-import { UserRole, Project } from '../../types';
-import { documentMetaFormSchema, validateDocumentFile } from '../../validation/document';
-import { validateForm, firstFieldError } from '../../validation/validateForm';
+import { PageHeader } from '../../shared/components/PageHeader';
+import { Button } from '../../shared/components/Button';
+import { DataTable, Column } from '../../shared/components/DataTable';
+import { Modal } from '../../shared/components/Modal';
+import { Input } from '../../shared/components/Input';
+import { Select } from '../../shared/components/Select';
+import { FileUpload } from '../../shared/components/FileUpload';
+import { ApiErrorBanner } from '../../shared/components/ApiErrorBanner';
+import { listDocuments, uploadDocument, downloadDocument } from '../../modules/admin/services/documentService';
+import { listProjects } from '../../modules/admin/services/projectService';
+import { getErrorMessage } from '../../shared/services/api';
+import { useAuthStore } from '../../shared/store/authStore';
+import { UserRole, Project } from '../../shared/types';
+import { documentMetaFormSchema, validateDocumentFile } from '../../modules/admin/validation/document';
+import { validateForm, firstFieldError } from '../../shared/validation/validateForm';
 
 const categoryOptions = [
   'LAND_DOCUMENTS',

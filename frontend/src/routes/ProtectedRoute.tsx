@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
-import { UserRole } from '../types';
+import { useAuthStore } from '../shared/store/authStore';
+import { UserRole } from '../shared/types';
 
 export function ProtectedRoute({ roles }: { roles?: UserRole[] }) {
   const user = useAuthStore((s) => s.user);

@@ -1,0 +1,73 @@
+import { useEffect, useState } from 'react';
+import { PageHeader } from '../../../shared/components/PageHeader';
+import { FilterBar } from '../../../shared/components/FilterBar';
+import { DataTable, Column } from '../../../shared/components/DataTable';
+import { Pagination } from '../../../shared/components/Pagination';
+import { StatusBadge } from '../../../shared/components/StatusBadge';
+import { Select } from '../../../shared/components/Select';
+import { listLands, updateLandStatus } from '../../landowner/services/landService';
+import { getErrorMessage } from '../../../shared/services/api';
+import { Land, LandStatus } from '../../../shared/types';
+
+const statusOptions = Object.values(LandStatus).map((v) => ({ label: v.replaceAll('_', ' '), value: v }));
+
+export function AdminLandsPage() {
+  const [lands, setLands] = useState<Land[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  function load() {
+    setLoading(true);
+    setError('');
+    listLands({ search, page, limit: 20 })
+      .then((res) => {
+        setLands(res.items);
+        setTotalPages(res.totalPages);
+      })
+      .catch((err) => {
+        setLands([]);
+        setError(getErrorMessage(err));
+      })
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(load, [search, page]);
+
+  async function handleStatusChange(id: string, status: string) {
+    await updateLandStatus(id, status);
+    load();
+  }
+
+  const columns: Column<Land>[] = [
+    { header: 'Land Title', accessor: (l) => l.landTitle },
+    { header: 'Owner', accessor: (l) => l.ownerName },
+    { header: 'Location', accessor: (l) => `${l.district}, ${l.state}` },
+    { header: 'Area', accessor: (l) => `${l.totalArea} ${l.areaUnit}` },
+    {
+      header: 'Status',
+      accessor: (l) => (
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <StatusBadge status={l.status} />
+          <Select
+            options={statusOptions}
+            value={l.status}
+            onChange={(e) => handleStatusChange(l._id, e.target.value)}
+            className="w-[190px] py-1 text-xs"
+          />
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <PageHeader title="Land Submissions" description="Review and manage submitted land." backTo="/dashboard" />
+      <FilterBar search={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} searchPlaceholder="Search lands..." />
+      <DataTable columns={columns} rows={lands} loading={loading} error={error} keyExtractor={(l) => l._id} showSerial page={page} pageSize={20} />
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+    </div>
+  );
+}

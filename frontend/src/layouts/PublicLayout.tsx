@@ -19,12 +19,12 @@ import {
   Image as ImageIcon,
   BookOpen,
 } from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
-import { useAuthModalStore } from '../store/authModalStore';
+import { useAuthStore } from '../shared/store/authStore';
+import { useAuthModalStore } from '../shared/store/authModalStore';
 import { images } from '../assets/images';
-import { SOCIAL_LINKS } from '../constants/social';
-import { InstagramPreviewSection } from '../components/InstagramPreviewSection';
-import { PublicChatbot } from '../components/chatbot/PublicChatbot';
+import { SOCIAL_LINKS } from '../modules/public/constants/social';
+import { InstagramPreviewSection } from '../modules/public/components/InstagramPreviewSection';
+import { PublicChatbot } from '../modules/chatbot/components/PublicChatbot';
 
 const topLinks = [
   { label: 'Home', to: '/' },

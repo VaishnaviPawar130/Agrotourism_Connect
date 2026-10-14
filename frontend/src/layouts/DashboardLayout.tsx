@@ -29,8 +29,8 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
-import { UserRole } from '../types';
+import { useAuthStore } from '../shared/store/authStore';
+import { UserRole } from '../shared/types';
 import { images } from '../assets/images';
 
 interface NavItem {
